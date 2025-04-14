@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,7 @@ import {
   Table as TableIcon, 
   Plus, 
   Trash2, 
-  Column, 
+  Columns, 
   RowsIcon,
   ArrowLeft,
   ArrowRight,
@@ -210,7 +209,7 @@ const TableBlock: React.FC<TableBlockProps> = ({ data, onChange }) => {
           className="gap-1"
         >
           <Plus className="h-3 w-3" />
-          <Column className="h-3 w-3" />
+          <Columns className="h-3 w-3" />
           Add Column
         </Button>
         
