@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,9 +8,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
+import { 
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
 import BlockSelector from '@/components/editor/BlockSelector';
 import BlockRenderer from '@/components/editor/BlockRenderer';
-import { BlockType, Article, Block, ArticleStatus } from '@/types/cms';
+import TagsInput from '@/components/editor/TagsInput';
+import MediaLibrary from '@/components/media/MediaLibrary';
+import { BlockType, Article, Block, ArticleStatus, Category, Tag } from '@/types/cms';
+import { Image, Search, Check, Trash } from 'lucide-react';
 
 const ArticleEditor = () => {
   const { id } = useParams();
@@ -28,11 +38,18 @@ const ArticleEditor = () => {
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     published_at: null,
+    keywords: []
   });
   
   const [blocks, setBlocks] = useState<Block[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(!isNewArticle);
   const [saving, setSaving] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [mediaDialogOpen, setMediaDialogOpen] = useState(false);
   
   useEffect(() => {
     const checkAuth = async () => {
@@ -47,6 +64,9 @@ const ArticleEditor = () => {
         ...prev,
         author_id: session.user.id,
       }));
+      
+      fetchCategories();
+      fetchTags();
       
       if (!isNewArticle) {
         fetchArticle(id!);
@@ -76,8 +96,26 @@ const ArticleEditor = () => {
       
       if (blocksError) throw blocksError;
       
+      // Fetch categories for this article
+      const { data: articleCategories, error: categoriesError } = await supabase
+        .from('article_categories')
+        .select('category_id')
+        .eq('article_id', articleId);
+      
+      if (categoriesError) throw categoriesError;
+      
+      // Fetch tags for this article
+      const { data: articleTags, error: tagsError } = await supabase
+        .from('article_tags')
+        .select('tag_id')
+        .eq('article_id', articleId);
+      
+      if (tagsError) throw tagsError;
+      
       setArticle(articleData as Article);
       setBlocks(blocksData as Block[] || []);
+      setSelectedCategories(articleCategories.map(ac => ac.category_id));
+      setSelectedTags(articleTags.map(at => at.tag_id));
     } catch (error: any) {
       toast({
         title: 'Error fetching article',
@@ -86,6 +124,44 @@ const ArticleEditor = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('name', { ascending: true });
+      
+      if (error) throw error;
+      
+      setCategories(data as Category[]);
+    } catch (error: any) {
+      toast({
+        title: 'Error fetching categories',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  const fetchTags = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tags')
+        .select('*')
+        .order('name', { ascending: true });
+      
+      if (error) throw error;
+      
+      setTags(data as Tag[]);
+    } catch (error: any) {
+      toast({
+        title: 'Error fetching tags',
+        description: error.message,
+        variant: 'destructive',
+      });
     }
   };
   
@@ -117,6 +193,13 @@ const ArticleEditor = () => {
       ...prev,
       status: value as ArticleStatus,
       published_at: value === 'published' ? new Date().toISOString() : prev.published_at,
+    }));
+  };
+  
+  const handleKeywordsChange = (keywords: string[]) => {
+    setArticle(prev => ({
+      ...prev,
+      keywords
     }));
   };
   
@@ -169,6 +252,96 @@ const ArticleEditor = () => {
         order: idx,
       }));
     });
+  };
+  
+  const handleCategoryToggle = (categoryId: string) => {
+    setSelectedCategories(prev => 
+      prev.includes(categoryId)
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
+    );
+  };
+  
+  const handleTagToggle = (tagId: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tagId)
+        ? prev.filter(id => id !== tagId)
+        : [...prev, tagId]
+    );
+  };
+  
+  const handleCreateCategory = async (name: string) => {
+    if (!name.trim()) return;
+    
+    try {
+      const slug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+      
+      const { data, error } = await supabase
+        .from('categories')
+        .insert({ name, slug })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      setCategories(prev => [...prev, data as Category]);
+      setSelectedCategories(prev => [...prev, data.id]);
+      
+      toast({
+        title: 'Category created',
+        description: `Category "${name}" has been created.`
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error creating category',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  const handleCreateTag = async (name: string) => {
+    if (!name.trim()) return;
+    
+    try {
+      const slug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+      
+      const { data, error } = await supabase
+        .from('tags')
+        .insert({ name, slug })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      setTags(prev => [...prev, data as Tag]);
+      setSelectedTags(prev => [...prev, data.id]);
+      
+      toast({
+        title: 'Tag created',
+        description: `Tag "${name}" has been created.`
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error creating tag',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  const handleFeaturedImageSelect = (media: any) => {
+    setArticle(prev => ({
+      ...prev,
+      featured_image: media.url
+    }));
+    setMediaDialogOpen(false);
   };
   
   const handleSave = async (publish: boolean = false) => {
@@ -248,6 +421,48 @@ const ArticleEditor = () => {
         if (blocksError) throw blocksError;
       }
       
+      // Handle categories
+      // First, remove existing categories for this article
+      await supabase
+        .from('article_categories')
+        .delete()
+        .eq('article_id', articleId);
+      
+      // Then insert selected categories
+      if (selectedCategories.length > 0) {
+        const categoriesToInsert = selectedCategories.map(categoryId => ({
+          article_id: articleId,
+          category_id: categoryId
+        }));
+        
+        const { error: categoriesError } = await supabase
+          .from('article_categories')
+          .insert(categoriesToInsert);
+        
+        if (categoriesError) throw categoriesError;
+      }
+      
+      // Handle tags
+      // First, remove existing tags for this article
+      await supabase
+        .from('article_tags')
+        .delete()
+        .eq('article_id', articleId);
+      
+      // Then insert selected tags
+      if (selectedTags.length > 0) {
+        const tagsToInsert = selectedTags.map(tagId => ({
+          article_id: articleId,
+          tag_id: tagId
+        }));
+        
+        const { error: tagsError } = await supabase
+          .from('article_tags')
+          .insert(tagsToInsert);
+        
+        if (tagsError) throw tagsError;
+      }
+      
       toast({
         title: isNewArticle ? 'Article created' : 'Article updated',
         description: publish 
@@ -269,6 +484,14 @@ const ArticleEditor = () => {
       setSaving(false);
     }
   };
+  
+  const filteredCategories = searchTerm
+    ? categories.filter(cat => cat.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    : categories;
+    
+  const filteredTags = searchTerm
+    ? tags.filter(tag => tag.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    : tags;
   
   if (loading) {
     return (
@@ -347,6 +570,20 @@ const ArticleEditor = () => {
                   />
                 </div>
                 
+                <div>
+                  <label className="text-sm font-medium mb-1 block">
+                    Keywords (for SEO)
+                  </label>
+                  <TagsInput
+                    value={article.keywords || []}
+                    onChange={handleKeywordsChange}
+                    placeholder="Add keywords..."
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Press Enter or comma to add a keyword
+                  </p>
+                </div>
+                
                 <hr className="my-6" />
                 
                 <div>
@@ -386,7 +623,7 @@ const ArticleEditor = () => {
           </Card>
         </div>
         
-        <div>
+        <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Settings</CardTitle>
@@ -411,17 +648,48 @@ const ArticleEditor = () => {
                 
                 <div>
                   <label className="text-sm font-medium mb-1 block">
-                    Featured Image URL
+                    Featured Image
                   </label>
-                  <Input
-                    name="featured_image"
-                    value={article.featured_image || ''}
-                    onChange={(e) => setArticle(prev => ({
-                      ...prev,
-                      featured_image: e.target.value || null
-                    }))}
-                    placeholder="https://example.com/image.jpg"
-                  />
+                  <div className="flex items-center gap-2">
+                    <Input
+                      name="featured_image"
+                      value={article.featured_image || ''}
+                      onChange={(e) => setArticle(prev => ({
+                        ...prev,
+                        featured_image: e.target.value || null
+                      }))}
+                      placeholder="https://example.com/image.jpg"
+                      className="flex-1"
+                    />
+                    <Dialog open={mediaDialogOpen} onOpenChange={setMediaDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="icon">
+                          <Image size={16} />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[700px]">
+                        <DialogTitle>Media Library</DialogTitle>
+                        <MediaLibrary 
+                          onSelect={handleFeaturedImageSelect} 
+                          onClose={() => setMediaDialogOpen(false)}
+                          mediaType="image"
+                        />
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                  
+                  {article.featured_image && (
+                    <div className="mt-2 border rounded-md overflow-hidden">
+                      <img 
+                        src={article.featured_image} 
+                        alt="Featured" 
+                        className="w-full h-48 object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://placehold.co/600x400?text=Image+Not+Found';
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
                 
                 <div>
@@ -450,6 +718,136 @@ const ArticleEditor = () => {
               </div>
             </CardContent>
           </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Categories</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search categories or create new..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && searchTerm.trim() && 
+                          !categories.some(c => c.name.toLowerCase() === searchTerm.toLowerCase())) {
+                        handleCreateCategory(searchTerm);
+                        setSearchTerm('');
+                      }
+                    }}
+                  />
+                  {searchTerm.trim() && 
+                   !categories.some(c => c.name.toLowerCase() === searchTerm.toLowerCase()) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1 top-1 text-xs"
+                      onClick={() => {
+                        handleCreateCategory(searchTerm);
+                        setSearchTerm('');
+                      }}
+                    >
+                      + Create
+                    </Button>
+                  )}
+                </div>
+                
+                <div className="max-h-60 overflow-y-auto space-y-1 border rounded-md p-2">
+                  {filteredCategories.length === 0 ? (
+                    <div className="text-center py-4 text-muted-foreground text-sm">
+                      No categories found
+                    </div>
+                  ) : (
+                    filteredCategories.map(category => (
+                      <div
+                        key={category.id}
+                        className={`flex items-center justify-between py-1 px-2 rounded-md cursor-pointer ${
+                          selectedCategories.includes(category.id) 
+                            ? 'bg-primary/10' 
+                            : 'hover:bg-muted'
+                        }`}
+                        onClick={() => handleCategoryToggle(category.id)}
+                      >
+                        <span>{category.name}</span>
+                        {selectedCategories.includes(category.id) && (
+                          <Check size={16} className="text-primary" />
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Tags</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search tags or create new..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && searchTerm.trim() && 
+                          !tags.some(t => t.name.toLowerCase() === searchTerm.toLowerCase())) {
+                        handleCreateTag(searchTerm);
+                        setSearchTerm('');
+                      }
+                    }}
+                  />
+                  {searchTerm.trim() && 
+                   !tags.some(t => t.name.toLowerCase() === searchTerm.toLowerCase()) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1 top-1 text-xs"
+                      onClick={() => {
+                        handleCreateTag(searchTerm);
+                        setSearchTerm('');
+                      }}
+                    >
+                      + Create
+                    </Button>
+                  )}
+                </div>
+                
+                <div className="max-h-60 overflow-y-auto space-y-1 border rounded-md p-2">
+                  {filteredTags.length === 0 ? (
+                    <div className="text-center py-4 text-muted-foreground text-sm">
+                      No tags found
+                    </div>
+                  ) : (
+                    filteredTags.map(tag => (
+                      <div
+                        key={tag.id}
+                        className={`flex items-center justify-between py-1 px-2 rounded-md cursor-pointer ${
+                          selectedTags.includes(tag.id) 
+                            ? 'bg-primary/10' 
+                            : 'hover:bg-muted'
+                        }`}
+                        onClick={() => handleTagToggle(tag.id)}
+                      >
+                        <span>{tag.name}</span>
+                        {selectedTags.includes(tag.id) && (
+                          <Check size={16} className="text-primary" />
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
@@ -464,12 +862,16 @@ const getDefaultDataForBlockType = (blockType: BlockType): any => {
       return { content: 'Heading', level: 'h2' };
     case 'image':
       return { url: '', alt: '', caption: '' };
+    case 'gallery':
+      return { images: [], caption: '', columns: 3, gap: 'medium' };
     case 'list':
       return { items: ['Item 1'], style: 'unordered' };
     case 'quote':
       return { content: 'Quote text', attribution: '' };
     case 'video':
       return { url: '', caption: '' };
+    case 'audio':
+      return { url: '', title: '', artist: '', caption: '' };
     case 'code':
       return { content: '// Code here', language: 'javascript' };
     case 'divider':

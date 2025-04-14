@@ -10,6 +10,8 @@ import ImageBlock from './blocks/ImageBlock';
 import ListBlock from './blocks/ListBlock';
 import QuoteBlock from './blocks/QuoteBlock';
 import VideoBlock from './blocks/VideoBlock';
+import AudioBlock from './blocks/AudioBlock';
+import GalleryBlock from './blocks/GalleryBlock';
 import CodeBlock from './blocks/CodeBlock';
 import DividerBlock from './blocks/DividerBlock';
 import ButtonBlock from './blocks/ButtonBlock';
@@ -43,12 +45,16 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({
         return <HeadingBlock data={block.data} onChange={onChange} />;
       case 'image':
         return <ImageBlock data={block.data} onChange={onChange} />;
+      case 'gallery':
+        return <GalleryBlock data={block.data} onChange={onChange} />;
       case 'list':
         return <ListBlock data={block.data} onChange={onChange} />;
       case 'quote':
         return <QuoteBlock data={block.data} onChange={onChange} />;
       case 'video':
         return <VideoBlock data={block.data} onChange={onChange} />;
+      case 'audio':
+        return <AudioBlock data={block.data} onChange={onChange} />;
       case 'code':
         return <CodeBlock data={block.data} onChange={onChange} />;
       case 'divider':

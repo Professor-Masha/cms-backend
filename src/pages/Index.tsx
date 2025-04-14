@@ -106,11 +106,50 @@ const Index = () => {
                 <CardTitle>Articles</CardTitle>
                 <CardDescription>Manage your content articles</CardDescription>
               </CardHeader>
-              <CardContent>
-                <p>The articles management interface will be implemented soon.</p>
-                <Button className="mt-4" onClick={() => navigate('/articles/new')}>
-                  Create New Article
-                </Button>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card>
+                    <CardHeader className="p-4">
+                      <CardTitle className="text-lg">Create</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                      <p className="text-sm text-muted-foreground">Create a new article with rich content blocks.</p>
+                    </CardContent>
+                    <CardFooter className="p-4 pt-0">
+                      <Button onClick={() => navigate('/articles/new')}>
+                        Create New Article
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader className="p-4">
+                      <CardTitle className="text-lg">Manage</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                      <p className="text-sm text-muted-foreground">Browse and manage all your articles.</p>
+                    </CardContent>
+                    <CardFooter className="p-4 pt-0">
+                      <Button variant="outline">
+                        View All Articles
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader className="p-4">
+                      <CardTitle className="text-lg">Categories</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                      <p className="text-sm text-muted-foreground">Manage categories and tags for your content.</p>
+                    </CardContent>
+                    <CardFooter className="p-4 pt-0">
+                      <Button variant="outline">
+                        Manage Categories
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -121,8 +160,36 @@ const Index = () => {
                 <CardTitle>Media Library</CardTitle>
                 <CardDescription>Manage your uploaded media files</CardDescription>
               </CardHeader>
-              <CardContent>
-                <p>The media management interface will be implemented soon.</p>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card>
+                    <CardHeader className="p-4">
+                      <CardTitle className="text-lg">Media Library</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                      <p className="text-sm text-muted-foreground">Browse and manage all your media files.</p>
+                    </CardContent>
+                    <CardFooter className="p-4 pt-0">
+                      <Button onClick={() => navigate('/media')}>
+                        Open Media Library
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader className="p-4">
+                      <CardTitle className="text-lg">Upload</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                      <p className="text-sm text-muted-foreground">Upload new media files to your library.</p>
+                    </CardContent>
+                    <CardFooter className="p-4 pt-0">
+                      <Button variant="outline" onClick={() => navigate('/media')}>
+                        Upload New Files
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

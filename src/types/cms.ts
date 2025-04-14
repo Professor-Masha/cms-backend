@@ -44,6 +44,7 @@ export interface Article {
   created_at: string;
   updated_at: string;
   published_at: string | null;
+  keywords?: string[];
 }
 
 export interface Block {
@@ -75,4 +76,31 @@ export interface Media {
   user_id: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Tag {
+  id: string;
+  name: string;
+  slug: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ArticleCategory {
+  article_id: string;
+  category_id: string;
+}
+
+export interface ArticleTag {
+  article_id: string;
+  tag_id: string;
 }

@@ -12,26 +12,27 @@ import {
 } from '@/components/ui/dialog';
 import { Media } from '@/types/cms';
 import MediaLibrary from '@/components/media/MediaLibrary';
-import { Image } from 'lucide-react';
+import { AudioLines } from 'lucide-react';
 
-interface ImageBlockProps {
+interface AudioBlockProps {
   data: {
     url: string;
-    alt: string;
-    caption: string;
+    title: string;
+    artist?: string;
+    caption?: string;
     mediaId?: string;
   };
   onChange: (data: any) => void;
 }
 
-const ImageBlock: React.FC<ImageBlockProps> = ({ data, onChange }) => {
+const AudioBlock: React.FC<AudioBlockProps> = ({ data, onChange }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const handleMediaSelect = (media: Media) => {
     onChange({
       ...data,
       url: media.url,
-      alt: media.alt_text || '',
+      title: media.alt_text || '',
       caption: media.caption || '',
       mediaId: media.id
     });
@@ -41,12 +42,12 @@ const ImageBlock: React.FC<ImageBlockProps> = ({ data, onChange }) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <Label>Image</Label>
+        <Label>Audio</Label>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm">
-              <Image className="mr-2 h-4 w-4" />
-              {data.url ? 'Change Image' : 'Select Image'}
+              <AudioLines className="mr-2 h-4 w-4" />
+              {data.url ? 'Change Audio' : 'Add Audio'}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[640px]">
@@ -54,41 +55,52 @@ const ImageBlock: React.FC<ImageBlockProps> = ({ data, onChange }) => {
             <MediaLibrary 
               onSelect={handleMediaSelect} 
               onClose={() => setDialogOpen(false)}
-              mediaType="image"
+              mediaType="audio"
             />
           </DialogContent>
         </Dialog>
       </div>
       
       <div>
-        <Label htmlFor="image-url">Image URL</Label>
+        <Label htmlFor="audio-url">Audio URL</Label>
         <Input
-          id="image-url"
+          id="audio-url"
           value={data.url}
           onChange={(e) => onChange({ ...data, url: e.target.value })}
-          placeholder="https://example.com/image.jpg"
+          placeholder="https://example.com/audio.mp3"
           className="mt-1"
         />
       </div>
       
       <div>
-        <Label htmlFor="image-alt">Alt Text</Label>
+        <Label htmlFor="audio-title">Title</Label>
         <Input
-          id="image-alt"
-          value={data.alt}
-          onChange={(e) => onChange({ ...data, alt: e.target.value })}
-          placeholder="Image description for accessibility"
+          id="audio-title"
+          value={data.title || ''}
+          onChange={(e) => onChange({ ...data, title: e.target.value })}
+          placeholder="Audio title"
           className="mt-1"
         />
       </div>
       
       <div>
-        <Label htmlFor="image-caption">Caption (optional)</Label>
+        <Label htmlFor="audio-artist">Artist (optional)</Label>
+        <Input
+          id="audio-artist"
+          value={data.artist || ''}
+          onChange={(e) => onChange({ ...data, artist: e.target.value })}
+          placeholder="Artist name"
+          className="mt-1"
+        />
+      </div>
+      
+      <div>
+        <Label htmlFor="audio-caption">Caption (optional)</Label>
         <Textarea
-          id="image-caption"
-          value={data.caption}
+          id="audio-caption"
+          value={data.caption || ''}
           onChange={(e) => onChange({ ...data, caption: e.target.value })}
-          placeholder="Image caption or description"
+          placeholder="Audio description"
           className="mt-1"
         />
       </div>
@@ -96,25 +108,29 @@ const ImageBlock: React.FC<ImageBlockProps> = ({ data, onChange }) => {
       {data.url && (
         <div className="mt-4 border rounded-md p-4">
           <div className="text-sm text-muted-foreground mb-2">Preview:</div>
-          <figure>
-            <img 
+          <div className="bg-muted p-4 rounded-md">
+            <div className="flex items-center gap-4 mb-2">
+              <AudioLines size={24} className="text-primary" />
+              <div>
+                {data.title && <div className="font-medium">{data.title}</div>}
+                {data.artist && <div className="text-sm text-muted-foreground">{data.artist}</div>}
+              </div>
+            </div>
+            <audio
               src={data.url}
-              alt={data.alt}
-              className="max-w-full rounded-md"
-              onError={(e) => {
-                e.currentTarget.src = 'https://placehold.co/600x400?text=Image+Not+Found';
-              }}
+              controls
+              className="w-full"
             />
             {data.caption && (
-              <figcaption className="text-sm text-muted-foreground mt-2 text-center">
+              <div className="text-sm text-muted-foreground mt-2">
                 {data.caption}
-              </figcaption>
+              </div>
             )}
-          </figure>
+          </div>
         </div>
       )}
     </div>
   );
 };
 
-export default ImageBlock;
+export default AudioBlock;
