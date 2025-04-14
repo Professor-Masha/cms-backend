@@ -20,7 +20,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ user }) => {
     const fetchStats = async () => {
       try {
         // Fetch user role
-        const { data: profiles, error: profileError } = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('role')
           .eq('id', user.id)
@@ -30,14 +30,25 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ user }) => {
           console.error('Error fetching profile:', profileError);
         }
         
-        // In a real implementation, we would fetch actual stats
-        // For now, let's use placeholder data
+        // Fetch article stats
+        const { data: articles, error: articlesError } = await supabase
+          .from('articles')
+          .select('status');
+          
+        if (articlesError) {
+          console.error('Error fetching articles:', articlesError);
+        }
+        
+        const totalArticles = articles?.length || 0;
+        const publishedArticles = articles?.filter(a => a.status === 'published').length || 0;
+        const draftArticles = articles?.filter(a => a.status === 'draft').length || 0;
+        
         setStats({
-          totalArticles: 0,
-          publishedArticles: 0,
-          draftArticles: 0,
-          mediaItems: 0,
-          userRole: profiles?.role || 'User',
+          totalArticles,
+          publishedArticles,
+          draftArticles,
+          mediaItems: 0, // We don't have media table yet
+          userRole: profileData?.role || 'User',
         });
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);
@@ -107,7 +118,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ user }) => {
         <CardContent>
           <p>
             This dashboard will show you analytics, recent activity, and quick access to your content.
-            The CMS backend is currently being set up. More features will be available soon.
+            You can now create and manage articles using the block-based editor.
           </p>
         </CardContent>
       </Card>

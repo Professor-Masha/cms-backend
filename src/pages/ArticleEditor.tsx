@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import BlockSelector from '@/components/editor/BlockSelector';
 import BlockRenderer from '@/components/editor/BlockRenderer';
-import { BlockType, Article, Block } from '@/types/cms';
+import { BlockType, Article, Block, ArticleStatus } from '@/types/cms';
 
 const ArticleEditor = () => {
   const { id } = useParams();
@@ -77,8 +76,8 @@ const ArticleEditor = () => {
       
       if (blocksError) throw blocksError;
       
-      setArticle(articleData);
-      setBlocks(blocksData || []);
+      setArticle(articleData as Article);
+      setBlocks(blocksData as Block[] || []);
     } catch (error: any) {
       toast({
         title: 'Error fetching article',
@@ -116,7 +115,7 @@ const ArticleEditor = () => {
   const handleStatusChange = (value: string) => {
     setArticle(prev => ({
       ...prev,
-      status: value,
+      status: value as ArticleStatus,
       published_at: value === 'published' ? new Date().toISOString() : prev.published_at,
     }));
   };
@@ -180,7 +179,7 @@ const ArticleEditor = () => {
       if (publish && article.status !== 'published') {
         setArticle(prev => ({
           ...prev,
-          status: 'published',
+          status: 'published' as ArticleStatus,
           published_at: new Date().toISOString(),
         }));
       }
@@ -189,20 +188,26 @@ const ArticleEditor = () => {
       
       // If new article, insert it first
       if (isNewArticle || !articleId) {
+        const articleToInsert = {
+          ...article,
+          status: publish ? 'published' : article.status,
+          published_at: publish ? new Date().toISOString() : article.published_at,
+        };
+        
         const { data: newArticle, error: articleError } = await supabase
           .from('articles')
-          .insert([{
-            ...article,
-            status: publish ? 'published' : article.status,
-            published_at: publish ? new Date().toISOString() : article.published_at,
-          }])
+          .insert([articleToInsert])
           .select()
           .single();
         
         if (articleError) throw articleError;
         
-        articleId = newArticle.id;
-        setArticle(newArticle);
+        if (newArticle) {
+          articleId = newArticle.id;
+          setArticle(newArticle as Article);
+        } else {
+          throw new Error('Failed to create article');
+        }
       } else {
         // Update existing article
         const { error: updateError } = await supabase
@@ -227,16 +232,18 @@ const ArticleEditor = () => {
       
       // Then insert all current blocks
       if (blocks.length > 0) {
+        const blocksToInsert = blocks.map((block, index) => ({
+          article_id: articleId,
+          order: index,
+          type: block.type,
+          data: block.data,
+          created_at: block.created_at,
+          updated_at: new Date().toISOString(),
+        }));
+        
         const { error: blocksError } = await supabase
           .from('blocks')
-          .insert(
-            blocks.map((block, index) => ({
-              ...block,
-              id: undefined, // Let Supabase generate IDs
-              article_id: articleId,
-              order: index,
-            }))
-          );
+          .insert(blocksToInsert);
         
         if (blocksError) throw blocksError;
       }
@@ -333,7 +340,7 @@ const ArticleEditor = () => {
                   </label>
                   <Textarea
                     name="description"
-                    value={article.description}
+                    value={article.description || ''}
                     onChange={handleInputChange}
                     placeholder="Brief description of the article"
                     rows={3}
@@ -449,7 +456,6 @@ const ArticleEditor = () => {
   );
 };
 
-// Helper function to get default data for each block type
 const getDefaultDataForBlockType = (blockType: BlockType): any => {
   switch (blockType) {
     case 'text':
@@ -467,7 +473,7 @@ const getDefaultDataForBlockType = (blockType: BlockType): any => {
     case 'code':
       return { content: '// Code here', language: 'javascript' };
     case 'divider':
-      return {};
+      return { style: 'solid', width: 'full', color: 'default' };
     case 'button':
       return { text: 'Click Me', url: '#', style: 'primary' };
     default:
