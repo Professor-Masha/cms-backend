@@ -1,0 +1,116 @@
+
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { BlockType } from '@/types/cms';
+import { PlusIcon } from 'lucide-react';
+
+interface BlockSelectorProps {
+  onSelectBlock: (blockType: BlockType) => void;
+}
+
+const BlockSelector: React.FC<BlockSelectorProps> = ({ onSelectBlock }) => {
+  const [open, setOpen] = useState(false);
+
+  const handleSelect = (blockType: BlockType) => {
+    onSelectBlock(blockType);
+    setOpen(false);
+  };
+
+  const coreBlocks: Array<{ type: BlockType; name: string; description: string }> = [
+    { type: 'text', name: 'Text', description: 'Rich text paragraphs' },
+    { type: 'heading', name: 'Heading', description: 'H1-H6 titles' },
+    { type: 'list', name: 'List', description: 'Bulleted or numbered list' },
+    { type: 'quote', name: 'Quote', description: 'Quotation or testimonial' },
+    { type: 'button', name: 'Button', description: 'Call-to-action button' },
+    { type: 'divider', name: 'Divider', description: 'Horizontal separator' },
+  ];
+
+  const mediaBlocks: Array<{ type: BlockType; name: string; description: string }> = [
+    { type: 'image', name: 'Image', description: 'Single image with caption' },
+    { type: 'gallery', name: 'Gallery', description: 'Multiple images as grid' },
+    { type: 'video', name: 'Video', description: 'Embedded video player' },
+    { type: 'audio', name: 'Audio', description: 'Audio player' },
+    { type: 'code', name: 'Code', description: 'Syntax-highlighted code' },
+    { type: 'embed', name: 'Embed', description: 'Embed external content' },
+  ];
+
+  const advancedBlocks: Array<{ type: BlockType; name: string; description: string }> = [
+    { type: 'form', name: 'Form', description: 'Contact or signup form' },
+    { type: 'table', name: 'Table', description: 'Tabular data' },
+    { type: 'accordion', name: 'Accordion', description: 'Collapsible content' },
+    { type: 'html', name: 'HTML', description: 'Custom HTML content' },
+  ];
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" className="flex items-center gap-2">
+          <PlusIcon size={16} />
+          Add Block
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-96" align="center">
+        <Tabs defaultValue="core" className="w-full">
+          <TabsList className="grid grid-cols-3 mb-4">
+            <TabsTrigger value="core">Core</TabsTrigger>
+            <TabsTrigger value="media">Media</TabsTrigger>
+            <TabsTrigger value="advanced">Advanced</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="core" className="space-y-2">
+            {coreBlocks.map((block) => (
+              <button
+                key={block.type}
+                className="w-full text-left p-2 hover:bg-muted rounded-md flex items-start"
+                onClick={() => handleSelect(block.type)}
+              >
+                <div>
+                  <div className="font-medium">{block.name}</div>
+                  <div className="text-sm text-muted-foreground">{block.description}</div>
+                </div>
+              </button>
+            ))}
+          </TabsContent>
+          
+          <TabsContent value="media" className="space-y-2">
+            {mediaBlocks.map((block) => (
+              <button
+                key={block.type}
+                className="w-full text-left p-2 hover:bg-muted rounded-md flex items-start"
+                onClick={() => handleSelect(block.type)}
+              >
+                <div>
+                  <div className="font-medium">{block.name}</div>
+                  <div className="text-sm text-muted-foreground">{block.description}</div>
+                </div>
+              </button>
+            ))}
+          </TabsContent>
+          
+          <TabsContent value="advanced" className="space-y-2">
+            {advancedBlocks.map((block) => (
+              <button
+                key={block.type}
+                className="w-full text-left p-2 hover:bg-muted rounded-md flex items-start"
+                onClick={() => handleSelect(block.type)}
+              >
+                <div>
+                  <div className="font-medium">{block.name}</div>
+                  <div className="text-sm text-muted-foreground">{block.description}</div>
+                </div>
+              </button>
+            ))}
+          </TabsContent>
+        </Tabs>
+      </PopoverContent>
+    </Popover>
+  );
+};
+
+export default BlockSelector;
