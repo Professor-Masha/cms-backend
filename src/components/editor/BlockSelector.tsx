@@ -36,8 +36,11 @@ const BlockSelector: React.FC<BlockSelectorProps> = ({ onSelectBlock }) => {
     { type: 'gallery', name: 'Gallery', description: 'Multiple images as grid' },
     { type: 'video', name: 'Video', description: 'Embedded video player' },
     { type: 'audio', name: 'Audio', description: 'Audio player' },
-    { type: 'code', name: 'Code', description: 'Syntax-highlighted code' },
+    { type: 'hero', name: 'Hero Banner', description: 'Full-width media banner' },
     { type: 'embed', name: 'Embed', description: 'Embed external content' },
+    { type: 'code', name: 'Code', description: 'Syntax-highlighted code' },
+    { type: 'social', name: 'Social Media', description: 'Links or icons' },
+    { type: 'map', name: 'Map', description: 'Location map' },
   ];
 
   const advancedBlocks: Array<{ type: BlockType; name: string; description: string }> = [

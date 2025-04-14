@@ -878,6 +878,65 @@ const getDefaultDataForBlockType = (blockType: BlockType): any => {
       return { style: 'solid', width: 'full', color: 'default' };
     case 'button':
       return { text: 'Click Me', url: '#', style: 'primary' };
+    case 'hero':
+      return { 
+        backgroundUrl: '', 
+        title: 'Hero Title', 
+        subtitle: 'Hero subtitle text goes here',
+        alignment: 'center',
+        height: 'medium',
+        overlayOpacity: 0.3
+      };
+    case 'embed':
+      return { 
+        url: '', 
+        type: 'custom', 
+        width: 'full', 
+        height: 400 
+      };
+    case 'social':
+      return { 
+        links: [], 
+        layout: 'row',
+        size: 'medium',
+        showLabels: true,
+        style: 'filled'
+      };
+    case 'map':
+      return { 
+        latitude: 40.7128, 
+        longitude: -74.0060, 
+        zoom: 13,
+        height: 400,
+        mapType: 'standard'
+      };
+    case 'accordion':
+      return { 
+        items: [
+          { id: `accordion-${Date.now()}-1`, title: 'Accordion Item 1', content: 'Content for item 1' },
+          { id: `accordion-${Date.now()}-2`, title: 'Accordion Item 2', content: 'Content for item 2' }
+        ],
+        collapsible: true,
+        style: 'default',
+        multiple: false
+      };
+    case 'html':
+      return { 
+        html: '<div>Add your custom HTML here</div>', 
+        description: ''
+      };
+    case 'table':
+      return { 
+        headers: ['Header 1', 'Header 2', 'Header 3'],
+        rows: [
+          ['Cell 1', 'Cell 2', 'Cell 3'],
+          ['Cell 4', 'Cell 5', 'Cell 6']
+        ],
+        style: 'default',
+        headerStyle: 'default',
+        width: 'full',
+        alignment: 'left'
+      };
     default:
       return {};
   }

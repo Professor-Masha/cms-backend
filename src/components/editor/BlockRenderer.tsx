@@ -15,6 +15,13 @@ import GalleryBlock from './blocks/GalleryBlock';
 import CodeBlock from './blocks/CodeBlock';
 import DividerBlock from './blocks/DividerBlock';
 import ButtonBlock from './blocks/ButtonBlock';
+import HeroBlock from './blocks/HeroBlock';
+import EmbedBlock from './blocks/EmbedBlock';
+import SocialBlock from './blocks/SocialBlock';
+import MapBlock from './blocks/MapBlock';
+import AccordionBlock from './blocks/AccordionBlock';
+import HtmlBlock from './blocks/HtmlBlock';
+import TableBlock from './blocks/TableBlock';
 
 interface BlockRendererProps {
   block: Block;
@@ -61,6 +68,20 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({
         return <DividerBlock data={block.data} onChange={onChange} />;
       case 'button':
         return <ButtonBlock data={block.data} onChange={onChange} />;
+      case 'hero':
+        return <HeroBlock data={block.data} onChange={onChange} />;
+      case 'embed':
+        return <EmbedBlock data={block.data} onChange={onChange} />;
+      case 'social':
+        return <SocialBlock data={block.data} onChange={onChange} />;
+      case 'map':
+        return <MapBlock data={block.data} onChange={onChange} />;
+      case 'accordion':
+        return <AccordionBlock data={block.data} onChange={onChange} />;
+      case 'html':
+        return <HtmlBlock data={block.data} onChange={onChange} />;
+      case 'table':
+        return <TableBlock data={block.data} onChange={onChange} />;
       default:
         return (
           <div className="p-4 text-muted-foreground border border-dashed rounded-md">
