@@ -1,346 +1,309 @@
 
 import { useState } from 'react';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { 
-  Accordion, 
-  AccordionContent, 
-  AccordionItem, 
-  AccordionTrigger 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue 
+} from '@/components/ui/select';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
 } from '@/components/ui/accordion';
-import { ListCollapse, Plus, GripVertical, X, MoveVertical } from 'lucide-react';
-
-interface AccordionItem {
-  id: string;
-  title: string;
-  content: string;
-}
+import { Plus, Trash2, GripVertical, Edit, Check, X } from 'lucide-react';
 
 interface AccordionBlockProps {
   data: {
-    items: AccordionItem[];
-    defaultOpen?: string | null;
-    collapsible?: boolean;
-    style?: 'default' | 'bordered' | 'separated';
-    multiple?: boolean;
+    items: Array<{
+      id: string;
+      title: string;
+      content: string;
+    }>;
+    collapsible: boolean;
+    style: 'default' | 'bordered' | 'simple';
+    multiple: boolean;
   };
   onChange: (data: any) => void;
 }
 
 const AccordionBlock: React.FC<AccordionBlockProps> = ({ data, onChange }) => {
-  const [openPreviewItems, setOpenPreviewItems] = useState<string[]>(
-    data.defaultOpen ? [data.defaultOpen] : []
-  );
-  
-  const items = data.items || [];
-  const collapsible = data.collapsible ?? true;
-  const style = data.style || 'default';
-  const multiple = data.multiple ?? false;
-  
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
+
   const addItem = () => {
-    const newId = `accordion-${Date.now()}`;
-    const newItems = [
-      ...items,
-      {
-        id: newId,
-        title: 'New item title',
-        content: 'New item content goes here.'
-      }
-    ];
-    
-    onChange({
-      ...data,
-      items: newItems,
-      defaultOpen: data.defaultOpen || (items.length === 0 ? newId : data.defaultOpen)
-    });
-  };
-  
-  const updateItem = (index: number, field: keyof AccordionItem, value: string) => {
-    const newItems = [...items];
-    newItems[index] = {
-      ...newItems[index],
-      [field]: value
+    const newItem = {
+      id: `accordion-${Date.now()}`,
+      title: `Item ${data.items.length + 1}`,
+      content: 'New accordion content'
     };
     
     onChange({
       ...data,
-      items: newItems
+      items: [...data.items, newItem]
     });
   };
-  
-  const removeItem = (index: number) => {
-    const newItems = [...items];
-    const removedItem = newItems[index];
-    newItems.splice(index, 1);
-    
-    // If the removed item was the default open one, update defaultOpen
-    let newDefaultOpen = data.defaultOpen;
-    if (data.defaultOpen === removedItem.id) {
-      newDefaultOpen = newItems.length > 0 ? newItems[0].id : null;
-    }
+
+  const removeItem = (id: string) => {
+    onChange({
+      ...data,
+      items: data.items.filter(item => item.id !== id)
+    });
+  };
+
+  const startEditing = (id: string, title: string, content: string) => {
+    setEditingId(id);
+    setEditTitle(title);
+    setEditContent(content);
+  };
+
+  const saveEditing = () => {
+    if (!editingId) return;
     
     onChange({
       ...data,
-      items: newItems,
-      defaultOpen: newDefaultOpen
+      items: data.items.map(item => 
+        item.id === editingId 
+          ? { ...item, title: editTitle, content: editContent } 
+          : item
+      )
     });
     
-    // Also update the preview state
-    if (openPreviewItems.includes(removedItem.id)) {
-      setOpenPreviewItems(openPreviewItems.filter(id => id !== removedItem.id));
-    }
+    setEditingId(null);
   };
-  
+
+  const cancelEditing = () => {
+    setEditingId(null);
+  };
+
+  const handleOptionChange = (key: string, value: any) => {
+    onChange({
+      ...data,
+      [key]: value
+    });
+  };
+
   const moveItem = (fromIndex: number, toIndex: number) => {
-    if (toIndex < 0 || toIndex >= items.length) return;
+    if (toIndex < 0 || toIndex >= data.items.length) return;
     
-    const newItems = [...items];
-    const [movedItem] = newItems.splice(fromIndex, 1);
-    newItems.splice(toIndex, 0, movedItem);
+    const items = [...data.items];
+    const [removed] = items.splice(fromIndex, 1);
+    items.splice(toIndex, 0, removed);
     
     onChange({
       ...data,
-      items: newItems
+      items
     });
-  };
-  
-  const setDefaultOpen = (itemId: string) => {
-    onChange({
-      ...data,
-      defaultOpen: data.defaultOpen === itemId ? null : itemId
-    });
-  };
-  
-  const handlePreviewValueChange = (value: string[]) => {
-    setOpenPreviewItems(value);
-  };
-  
-  const handlePreviewItemClick = (itemId: string) => {
-    if (multiple) {
-      setOpenPreviewItems(
-        openPreviewItems.includes(itemId)
-          ? openPreviewItems.filter(id => id !== itemId)
-          : [...openPreviewItems, itemId]
-      );
-    } else {
-      setOpenPreviewItems(
-        openPreviewItems.includes(itemId) && collapsible
-          ? []
-          : [itemId]
-      );
-    }
-  };
-  
-  const getItemClass = () => {
-    switch (style) {
-      case 'bordered': return 'border-2 rounded-md p-2 mb-2';
-      case 'separated': return 'border rounded-md p-2 mb-4 shadow-sm';
-      default: return 'border-b';
-    }
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <ListCollapse className="h-5 w-5 text-primary" />
-          <Label>Accordion</Label>
-        </div>
-        <Button 
-          type="button" 
-          variant="outline" 
-          size="sm" 
-          onClick={addItem}
-        >
-          <Plus className="mr-1 h-3 w-3" /> Add Item
-        </Button>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="accordion-style">Style</Label>
           <Select 
-            value={style} 
-            onValueChange={(value) => onChange({
-              ...data,
-              style: value as 'default' | 'bordered' | 'separated'
-            })}
+            value={data.style} 
+            onValueChange={(value) => handleOptionChange('style', value)}
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Style" />
+            <SelectTrigger id="accordion-style">
+              <SelectValue placeholder="Select style" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="default">Default</SelectItem>
               <SelectItem value="bordered">Bordered</SelectItem>
-              <SelectItem value="separated">Separated</SelectItem>
+              <SelectItem value="simple">Simple</SelectItem>
             </SelectContent>
           </Select>
         </div>
         
-        <div className="flex items-center space-x-2">
-          <Label htmlFor="accordion-collapsible" className="cursor-pointer select-none">
-            Allow collapsing all items
-          </Label>
-          <input
-            id="accordion-collapsible"
-            type="checkbox"
-            checked={collapsible}
-            onChange={(e) => onChange({
-              ...data,
-              collapsible: e.target.checked
-            })}
-            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-          />
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <Label htmlFor="accordion-multiple" className="cursor-pointer select-none">
-            Allow multiple open items
-          </Label>
-          <input
-            id="accordion-multiple"
-            type="checkbox"
-            checked={multiple}
-            onChange={(e) => onChange({
-              ...data,
-              multiple: e.target.checked
-            })}
-            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-          />
-        </div>
-      </div>
-      
-      <div className="space-y-4">
-        {items.map((item, index) => (
-          <div key={item.id} className="border rounded-md p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
-                <span className="font-medium">Item {index + 1}</span>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => moveItem(index, index - 1)}
-                  disabled={index === 0}
-                  className="h-8 w-8"
-                >
-                  <MoveVertical className="h-4 w-4 rotate-180" />
-                </Button>
-                
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => moveItem(index, index + 1)}
-                  disabled={index === items.length - 1}
-                  className="h-8 w-8"
-                >
-                  <MoveVertical className="h-4 w-4" />
-                </Button>
-                
-                <Button
-                  type="button"
-                  variant={data.defaultOpen === item.id ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setDefaultOpen(item.id)}
-                  className="text-xs h-8"
-                >
-                  {data.defaultOpen === item.id ? 'Default Open' : 'Set Default'}
-                </Button>
-                
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeItem(index)}
-                  className="h-8 w-8 text-destructive"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 gap-2">
-              <div>
-                <Label htmlFor={`item-title-${index}`}>Title</Label>
-                <Input
-                  id={`item-title-${index}`}
-                  value={item.title}
-                  onChange={(e) => updateItem(index, 'title', e.target.value)}
-                  placeholder="Item title"
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor={`item-content-${index}`}>Content</Label>
-                <Textarea
-                  id={`item-content-${index}`}
-                  value={item.content}
-                  onChange={(e) => updateItem(index, 'content', e.target.value)}
-                  placeholder="Item content"
-                  rows={3}
-                  className="mt-1"
-                />
-              </div>
-            </div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="accordion-collapsible">Allow All Closed</Label>
+            <Switch 
+              id="accordion-collapsible"
+              checked={data.collapsible}
+              onCheckedChange={(checked) => handleOptionChange('collapsible', checked)}
+            />
           </div>
-        ))}
-        
-        {items.length === 0 && (
-          <div className="text-center py-8 border-2 border-dashed rounded-md">
-            <p className="text-muted-foreground">
-              No accordion items added yet
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={addItem}
-              className="mt-2"
-            >
-              <Plus className="mr-1 h-3 w-3" /> Add Item
-            </Button>
-          </div>
-        )}
-      </div>
-      
-      {items.length > 0 && (
-        <div className="mt-4 border rounded-md p-4">
-          <div className="text-sm text-muted-foreground mb-4">Preview:</div>
           
-          <Accordion
-            type={multiple ? "multiple" : "single"}
-            defaultValue={data.defaultOpen ? [data.defaultOpen] : []}
-            collapsible={collapsible}
-            value={openPreviewItems}
-            className="w-full"
+          <div className="flex items-center justify-between">
+            <Label htmlFor="accordion-multiple">Allow Multiple Open</Label>
+            <Switch 
+              id="accordion-multiple"
+              checked={data.multiple}
+              onCheckedChange={(checked) => handleOptionChange('multiple', checked)}
+            />
+          </div>
+        </div>
+      </div>
+      
+      <div className="border rounded-md p-4">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-sm font-medium">Accordion Items</h3>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={addItem}
+            className="gap-1"
           >
-            {items.map((item) => (
-              <AccordionItem key={item.id} value={item.id} className={getItemClass()}>
-                <AccordionTrigger
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handlePreviewItemClick(item.id);
-                  }}
-                >
-                  {item.title}
-                </AccordionTrigger>
+            <Plus className="h-3 w-3" />
+            Add Item
+          </Button>
+        </div>
+
+        <div className="space-y-2">
+          {data.items.map((item, index) => (
+            <div key={item.id} className="border rounded-md">
+              {editingId === item.id ? (
+                <div className="p-3 space-y-2">
+                  <div>
+                    <Label htmlFor={`edit-title-${item.id}`} className="text-xs">
+                      Title
+                    </Label>
+                    <Input
+                      id={`edit-title-${item.id}`}
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor={`edit-content-${item.id}`} className="text-xs">
+                      Content
+                    </Label>
+                    <Textarea
+                      id={`edit-content-${item.id}`}
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2 mt-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={cancelEditing}
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="default"
+                      onClick={saveEditing}
+                    >
+                      <Check className="h-4 w-4 mr-1" />
+                      Save
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between p-2">
+                  <div className="flex items-center">
+                    <button
+                      className="cursor-grab text-muted-foreground mr-2 touch-none p-1"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        // This would be replaced with actual drag functionality
+                      }}
+                    >
+                      <GripVertical size={16} />
+                    </button>
+                    <span className="font-medium">{item.title}</span>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => moveItem(index, index - 1)}
+                      disabled={index === 0}
+                      className="h-7 w-7 p-0"
+                    >
+                      ↑
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => moveItem(index, index + 1)}
+                      disabled={index === data.items.length - 1}
+                      className="h-7 w-7 p-0"
+                    >
+                      ↓
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => startEditing(item.id, item.title, item.content)}
+                      className="h-7 w-7 p-0"
+                    >
+                      <Edit size={14} />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => removeItem(item.id)}
+                      className="h-7 w-7 p-0 text-destructive"
+                    >
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      <div className="border rounded-md p-4">
+        <h3 className="text-sm font-medium mb-3">Preview</h3>
+        
+        {data.multiple ? (
+          <Accordion
+            type="multiple"
+            defaultValue={data.items.map(item => item.id)}
+            collapsible={data.collapsible}
+            className={`${
+              data.style === 'bordered' ? 'border rounded-md p-1' :
+              data.style === 'simple' ? 'space-y-1' : ''
+            }`}
+          >
+            {data.items.map(item => (
+              <AccordionItem key={item.id} value={item.id}>
+                <AccordionTrigger>{item.title}</AccordionTrigger>
                 <AccordionContent>
                   {item.content}
                 </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
-        </div>
-      )}
+        ) : (
+          <Accordion
+            type="single"
+            defaultValue={data.items.length > 0 ? data.items[0].id : undefined}
+            collapsible={data.collapsible}
+            className={`${
+              data.style === 'bordered' ? 'border rounded-md p-1' :
+              data.style === 'simple' ? 'space-y-1' : ''
+            }`}
+          >
+            {data.items.map(item => (
+              <AccordionItem key={item.id} value={item.id}>
+                <AccordionTrigger>{item.title}</AccordionTrigger>
+                <AccordionContent>
+                  {item.content}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        )}
+      </div>
     </div>
   );
 };
