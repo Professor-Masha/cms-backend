@@ -14,7 +14,7 @@ import {
   Table as TableIcon, 
   Plus, 
   Trash2, 
-  ColumnVerticalIcon, 
+  Column, 
   RowsIcon,
   ArrowLeft,
   ArrowRight,
@@ -210,7 +210,7 @@ const TableBlock: React.FC<TableBlockProps> = ({ data, onChange }) => {
           className="gap-1"
         >
           <Plus className="h-3 w-3" />
-          <ColumnVerticalIcon className="h-3 w-3" />
+          <Column className="h-3 w-3" />
           Add Column
         </Button>
         
@@ -351,7 +351,6 @@ const TableBlock: React.FC<TableBlockProps> = ({ data, onChange }) => {
         <div>
           <Label htmlFor="table-alignment">Text Alignment</Label>
           <Select 
-            id="table-alignment"
             value={alignment} 
             onValueChange={(value) => onChange({
               ...data,
@@ -374,7 +373,6 @@ const TableBlock: React.FC<TableBlockProps> = ({ data, onChange }) => {
         <div>
           <Label htmlFor="table-style">Table Style</Label>
           <Select 
-            id="table-style"
             value={style} 
             onValueChange={(value) => onChange({
               ...data,
@@ -396,7 +394,6 @@ const TableBlock: React.FC<TableBlockProps> = ({ data, onChange }) => {
         <div>
           <Label htmlFor="table-header-style">Header Style</Label>
           <Select 
-            id="table-header-style"
             value={headerStyle} 
             onValueChange={(value) => onChange({
               ...data,
@@ -418,7 +415,6 @@ const TableBlock: React.FC<TableBlockProps> = ({ data, onChange }) => {
         <div>
           <Label htmlFor="table-width">Width</Label>
           <Select 
-            id="table-width"
             value={width} 
             onValueChange={(value) => onChange({
               ...data,

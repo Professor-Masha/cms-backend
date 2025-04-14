@@ -11,7 +11,7 @@ import {
   AccordionItem, 
   AccordionTrigger 
 } from '@/components/ui/accordion';
-import { ListCollapse, Plus, DragVertical, X, MoveVertical } from 'lucide-react';
+import { ListCollapse, Plus, GripVertical, X, MoveVertical } from 'lucide-react';
 
 interface AccordionItem {
   id: string;
@@ -163,7 +163,6 @@ const AccordionBlock: React.FC<AccordionBlockProps> = ({ data, onChange }) => {
         <div>
           <Label htmlFor="accordion-style">Style</Label>
           <Select 
-            id="accordion-style"
             value={style} 
             onValueChange={(value) => onChange({
               ...data,
@@ -219,7 +218,7 @@ const AccordionBlock: React.FC<AccordionBlockProps> = ({ data, onChange }) => {
           <div key={item.id} className="border rounded-md p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <DragVertical className="h-5 w-5 text-muted-foreground cursor-move" />
+                <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
                 <span className="font-medium">Item {index + 1}</span>
               </div>
               

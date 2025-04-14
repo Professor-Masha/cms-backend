@@ -156,7 +156,6 @@ const MapBlock: React.FC<MapBlockProps> = ({ data, onChange }) => {
         <div>
           <Label htmlFor="map-zoom">Zoom Level</Label>
           <Select 
-            id="map-zoom"
             value={zoom.toString()} 
             onValueChange={(value) => onChange({
               ...data,
@@ -179,7 +178,6 @@ const MapBlock: React.FC<MapBlockProps> = ({ data, onChange }) => {
         <div>
           <Label htmlFor="map-type">Map Type</Label>
           <Select 
-            id="map-type"
             value={mapType} 
             onValueChange={(value) => onChange({
               ...data,
