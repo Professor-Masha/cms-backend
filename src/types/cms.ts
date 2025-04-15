@@ -44,7 +44,7 @@ export interface Article {
   created_at: string;
   updated_at: string;
   published_at: string | null;
-  keywords?: string[];
+  keywords?: string[]; // Explicitly marked as optional
 }
 
 export interface Block {

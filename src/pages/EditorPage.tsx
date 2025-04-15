@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -71,6 +70,11 @@ const EditorPage = () => {
       
       if (articleError) throw articleError;
       
+      const articleWithKeywords = {
+        ...articleData,
+        keywords: articleData.keywords || []
+      };
+      
       const { data: blocksData, error: blocksError } = await supabase
         .from('blocks')
         .select('*')
@@ -93,7 +97,7 @@ const EditorPage = () => {
       
       if (tagsError) throw tagsError;
       
-      setArticle(articleData as Article);
+      setArticle(articleWithKeywords as Article);
       setBlocks(blocksData as Block[] || []);
       setSelectedCategories(articleCategories.map(ac => ac.category_id));
       setSelectedTags(articleTags.map(at => at.tag_id));
@@ -425,9 +429,7 @@ const EditorPage = () => {
         updated_at: new Date().toISOString(),
       };
 
-      // For new articles, we need to create the article first
       if (isNewArticle) {
-        // Remove the ID field for new articles to let Supabase generate it
         const { id: _, ...articleToInsert } = currentArticle;
         
         const { data: newArticle, error: articleError } = await supabase
@@ -495,7 +497,6 @@ const EditorPage = () => {
           navigate(`/articles/${newArticle.id}`);
         }
       } else {
-        // Update existing article
         const { error: updateError } = await supabase
           .from('articles')
           .update(currentArticle)
@@ -503,7 +504,6 @@ const EditorPage = () => {
         
         if (updateError) throw updateError;
         
-        // Delete existing blocks and re-insert updated ones
         await supabase
           .from('blocks')
           .delete()
@@ -526,7 +526,6 @@ const EditorPage = () => {
           if (blocksError) throw blocksError;
         }
         
-        // Update categories
         await supabase
           .from('article_categories')
           .delete()
@@ -545,7 +544,6 @@ const EditorPage = () => {
           if (categoriesError) throw categoriesError;
         }
         
-        // Update tags
         await supabase
           .from('article_tags')
           .delete()
@@ -618,7 +616,16 @@ const EditorPage = () => {
         
         <div>
           <ArticleSidebar
-            article={article}
+            article={{
+              title: article.title,
+              slug: article.slug,
+              description: article.description || '',
+              status: article.status,
+              featured_image: article.featured_image,
+              created_at: article.created_at,
+              published_at: article.published_at,
+              keywords: article.keywords || []
+            }}
             onArticleChange={handleArticleChange}
             onStatusChange={handleStatusChange}
             onKeywordsChange={handleKeywordsChange}

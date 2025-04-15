@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -20,7 +19,7 @@ interface ArticleSidebarProps {
     featured_image: string | null;
     created_at: string;
     published_at: string | null;
-    keywords: string[];
+    keywords?: string[]; // Make keywords optional
   };
   onArticleChange: (key: string, value: any) => void;
   onStatusChange: (status: ArticleStatus) => void;
@@ -164,7 +163,7 @@ const ArticleSidebar: React.FC<ArticleSidebarProps> = ({
                 Keywords (for SEO)
               </label>
               <TagsInput
-                value={article.keywords || []}
+                value={article.keywords || []} // Ensure default empty array if keywords is undefined
                 onChange={onKeywordsChange}
                 placeholder="Add keywords..."
               />
