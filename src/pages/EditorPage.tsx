@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useReducer } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -82,6 +83,17 @@ const EditorPage = () => {
   });
 
   const { article, blocks } = history.present;
+  
+  // Add setArticle method to update article state
+  const setArticle = (updateFn: (prevArticle: Article) => Article) => {
+    dispatch({
+      type: 'SAVE_STATE',
+      payload: { 
+        article: updateFn(article), 
+        blocks 
+      }
+    });
+  };
   
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
