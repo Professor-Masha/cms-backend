@@ -35,6 +35,12 @@ const ArticleContent: React.FC<ArticleContentProps> = ({
   onReorderBlocks,
   onRemoveBlock,
 }) => {
+  // Handler for drag end event
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    onReorderBlocks(result);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -92,7 +98,7 @@ const ArticleContent: React.FC<ArticleContentProps> = ({
                   blocks={blocks}
                   onUpdateBlock={onUpdateBlock}
                   onRemoveBlock={onRemoveBlock}
-                  onReorderBlocks={onReorderBlocks}
+                  onReorderBlocks={handleDragEnd}
                 />
                 
                 <BlockMenu onAddBlock={onAddBlock} />
