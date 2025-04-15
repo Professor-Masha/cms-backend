@@ -280,7 +280,7 @@ const EditorPage = () => {
     }));
   };
   
-  const addBlock = (blockType: BlockType) => {
+  const addBlock = (blockType: BlockType, afterIndex: number = -1) => {
     saveToHistory();
     
     const getDefaultData = () => {
@@ -366,6 +366,37 @@ const EditorPage = () => {
             width: 'full',
             alignment: 'left'
           };
+        case 'columns':
+          return {
+            columns: [
+              { id: `col-${Date.now()}-1`, width: 50, blocks: [] },
+              { id: `col-${Date.now()}-2`, width: 50, blocks: [] }
+            ],
+            gapSize: 'medium'
+          };
+        
+        case 'group':
+          return {
+            blocks: [],
+            label: 'Group',
+            style: 'default'
+          };
+          
+        case 'row':
+          return {
+            blocks: [],
+            alignment: 'center',
+            spacing: 'medium',
+            wrap: true
+          };
+          
+        case 'stack':
+          return {
+            blocks: [],
+            spacing: 'medium',
+            alignment: 'start'
+          };
+          
         default:
           return {};
       }
@@ -375,19 +406,37 @@ const EditorPage = () => {
       id: `temp-${Date.now()}`,
       article_id: article.id || 'temp',
       type: blockType,
-      order: blocks.length,
+      order: afterIndex >= 0 ? afterIndex + 1 : blocks.length,
       data: getDefaultData(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
     
-    dispatch({
-      type: 'SAVE_STATE',
-      payload: { 
-        article, 
-        blocks: [...blocks, newBlock]
-      }
-    });
+    if (afterIndex >= 0) {
+      const updatedBlocks = [...blocks];
+      updatedBlocks.splice(afterIndex + 1, 0, newBlock);
+      
+      const reindexedBlocks = updatedBlocks.map((block, idx) => ({
+        ...block,
+        order: idx,
+      }));
+      
+      dispatch({
+        type: 'SAVE_STATE',
+        payload: { 
+          article, 
+          blocks: reindexedBlocks
+        }
+      });
+    } else {
+      dispatch({
+        type: 'SAVE_STATE',
+        payload: { 
+          article, 
+          blocks: [...blocks, newBlock]
+        }
+      });
+    }
   };
   
   const updateBlock = (index: number, data: any) => {
@@ -423,6 +472,74 @@ const EditorPage = () => {
     });
   };
   
+  const duplicateBlock = (index: number) => {
+    saveToHistory();
+    
+    const blockToDuplicate = blocks[index];
+    const duplicatedData = JSON.parse(JSON.stringify(blockToDuplicate.data));
+    
+    const newBlock: Block = {
+      id: `temp-${Date.now()}`,
+      article_id: article.id || 'temp',
+      type: blockToDuplicate.type,
+      order: index + 1,
+      data: duplicatedData,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    
+    const updatedBlocks = [...blocks];
+    updatedBlocks.splice(index + 1, 0, newBlock);
+    
+    const reindexedBlocks = updatedBlocks.map((block, idx) => ({
+      ...block,
+      order: idx,
+    }));
+    
+    dispatch({
+      type: 'SAVE_STATE',
+      payload: { article, blocks: reindexedBlocks }
+    });
+  };
+  
+  const groupBlocks = (indices: number[]) => {
+    saveToHistory();
+    
+    if (indices.length < 2) return;
+    
+    indices.sort((a, b) => a - b);
+    
+    const blocksToGroup = indices.map(index => blocks[index]);
+    
+    const groupBlock: Block = {
+      id: `temp-${Date.now()}`,
+      article_id: article.id || 'temp',
+      type: 'group',
+      order: indices[0],
+      data: {
+        blocks: blocksToGroup,
+        label: 'Block Group',
+        style: 'default'
+      },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    
+    const updatedBlocks = blocks.filter((_, index) => !indices.includes(index));
+    
+    updatedBlocks.splice(indices[0], 0, groupBlock);
+    
+    const reindexedBlocks = updatedBlocks.map((block, idx) => ({
+      ...block,
+      order: idx,
+    }));
+    
+    dispatch({
+      type: 'SAVE_STATE',
+      payload: { article, blocks: reindexedBlocks }
+    });
+  };
+  
   const handleReorderBlocks = (result: DropResult) => {
     if (!result.destination) return;
     
@@ -430,6 +547,23 @@ const EditorPage = () => {
     
     const fromIndex = result.source.index;
     const toIndex = result.destination.index;
+    
+    if ('duplicatedBlock' in result) {
+      const customResult = result as unknown as { duplicatedBlock: Block };
+      const newBlocks = [...blocks];
+      newBlocks.splice(toIndex, 0, customResult.duplicatedBlock);
+      
+      const reindexedBlocks = newBlocks.map((block, idx) => ({
+        ...block,
+        order: idx,
+      }));
+      
+      dispatch({
+        type: 'SAVE_STATE',
+        payload: { article, blocks: reindexedBlocks }
+      });
+      return;
+    }
     
     if (fromIndex === toIndex) return;
     

@@ -42,6 +42,13 @@ const BlockSelector: React.FC<BlockSelectorProps> = ({ onSelectBlock }) => {
     { type: 'social', name: 'Social Media', description: 'Links or icons' },
     { type: 'map', name: 'Map', description: 'Location map' },
   ];
+  
+  const layoutBlocks: Array<{ type: BlockType; name: string; description: string }> = [
+    { type: 'columns', name: 'Columns', description: 'Multi-column layout' },
+    { type: 'group', name: 'Group', description: 'Group content blocks' },
+    { type: 'row', name: 'Row', description: 'Horizontal layout' },
+    { type: 'stack', name: 'Stack', description: 'Vertical layout' },
+  ];
 
   const advancedBlocks: Array<{ type: BlockType; name: string; description: string }> = [
     { type: 'form', name: 'Form', description: 'Contact or signup form' },
@@ -60,9 +67,10 @@ const BlockSelector: React.FC<BlockSelectorProps> = ({ onSelectBlock }) => {
       </PopoverTrigger>
       <PopoverContent className="w-96" align="center">
         <Tabs defaultValue="core" className="w-full">
-          <TabsList className="grid grid-cols-3 mb-4">
+          <TabsList className="grid grid-cols-4 mb-4">
             <TabsTrigger value="core">Core</TabsTrigger>
             <TabsTrigger value="media">Media</TabsTrigger>
+            <TabsTrigger value="layout">Layout</TabsTrigger>
             <TabsTrigger value="advanced">Advanced</TabsTrigger>
           </TabsList>
           
@@ -83,6 +91,21 @@ const BlockSelector: React.FC<BlockSelectorProps> = ({ onSelectBlock }) => {
           
           <TabsContent value="media" className="space-y-2">
             {mediaBlocks.map((block) => (
+              <button
+                key={block.type}
+                className="w-full text-left p-2 hover:bg-muted rounded-md flex items-start"
+                onClick={() => handleSelect(block.type)}
+              >
+                <div>
+                  <div className="font-medium">{block.name}</div>
+                  <div className="text-sm text-muted-foreground">{block.description}</div>
+                </div>
+              </button>
+            ))}
+          </TabsContent>
+          
+          <TabsContent value="layout" className="space-y-2">
+            {layoutBlocks.map((block) => (
               <button
                 key={block.type}
                 className="w-full text-left p-2 hover:bg-muted rounded-md flex items-start"

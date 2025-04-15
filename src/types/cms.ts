@@ -1,4 +1,3 @@
-
 export type BlockType = 
   // Core blocks
   | 'text'
@@ -19,6 +18,12 @@ export type BlockType =
   | 'code'
   | 'social'
   | 'map'
+  
+  // Layout blocks
+  | 'columns'
+  | 'group'
+  | 'row'
+  | 'stack'
   
   // Advanced blocks
   | 'recentPosts'
@@ -55,6 +60,7 @@ export interface Block {
   data: any;
   created_at: string;
   updated_at: string;
+  parent_id?: string; // For nested blocks
 }
 
 export interface User {
