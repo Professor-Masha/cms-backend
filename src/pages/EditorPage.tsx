@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useReducer } from 'react';
+import React, { useReducer, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import ArticleContent from '@/components/editor/ArticleContent';
-import ArticleSidebar from '@/components/editor/ArticleSidebar';
-import EditorToolbar from '@/components/editor/EditorToolbar';
+import EditorLayout from '@/components/editor/EditorLayout';
 import { Article, Block, ArticleStatus, Category, Tag, BlockType } from '@/types/cms';
 import { DropResult } from 'react-beautiful-dnd';
 
@@ -728,73 +726,35 @@ const EditorPage = () => {
   }
   
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      <EditorToolbar 
-        status={article.status}
-        onStatusChange={handleStatusChange}
-        onUndo={handleUndo}
-        onRedo={handleRedo}
-        onSave={() => handleSave(false)}
-        onPublish={() => handleSave(true)}
-        onPreview={handlePreview}
-        canUndo={history.past.length > 0}
-        canRedo={history.future.length > 0}
-        isSaving={saving}
-      />
-      
-      <div className="flex-1 overflow-auto">
-        <div className="container mx-auto px-4 py-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2">
-              <ArticleContent
-                title={article.title}
-                slug={article.slug}
-                description={article.description || ''}
-                blocks={blocks}
-                onTitleChange={handleTitleChange}
-                onSlugChange={handleSlugChange}
-                onDescriptionChange={handleDescriptionChange}
-                onAddBlock={addBlock}
-                onUpdateBlock={updateBlock}
-                onReorderBlocks={handleReorderBlocks}
-                onRemoveBlock={removeBlock}
-              />
-            </div>
-            
-            <div>
-              <ArticleSidebar
-                article={{
-                  title: article.title,
-                  slug: article.slug,
-                  description: article.description || '',
-                  status: article.status,
-                  featured_image: article.featured_image,
-                  created_at: article.created_at,
-                  published_at: article.published_at,
-                  keywords: article.keywords || []
-                }}
-                onArticleChange={handleArticleChange}
-                onStatusChange={handleStatusChange}
-                onKeywordsChange={handleKeywordsChange}
-                categories={categories}
-                tags={tags}
-                selectedCategories={selectedCategories}
-                selectedTags={selectedTags}
-                onCategoryToggle={handleCategoryToggle}
-                onTagToggle={handleTagToggle}
-                onCreateCategory={handleCreateCategory}
-                onCreateTag={handleCreateTag}
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-                isSaving={saving}
-                onSave={handleSave}
-                onCancel={() => navigate('/')}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <EditorLayout
+      article={article}
+      blocks={blocks}
+      categories={categories}
+      tags={tags}
+      selectedCategories={selectedCategories}
+      selectedTags={selectedTags}
+      onArticleChange={handleArticleChange}
+      onStatusChange={handleStatusChange}
+      onKeywordsChange={handleKeywordsChange}
+      onAddBlock={addBlock}
+      onUpdateBlock={updateBlock}
+      onReorderBlocks={handleReorderBlocks}
+      onRemoveBlock={removeBlock}
+      onCategoryToggle={handleCategoryToggle}
+      onTagToggle={handleTagToggle}
+      onCreateCategory={handleCreateCategory}
+      onCreateTag={handleCreateTag}
+      searchTerm={searchTerm}
+      onSearchChange={setSearchTerm}
+      isSaving={saving}
+      onSave={handleSave}
+      onCancel={() => navigate('/')}
+      onUndo={handleUndo}
+      onRedo={handleRedo}
+      onPreview={handlePreview}
+      canUndo={history.past.length > 0}
+      canRedo={history.future.length > 0}
+    />
   );
 };
 
