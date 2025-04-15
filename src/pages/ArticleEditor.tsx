@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -68,8 +67,8 @@ const ArticleEditor = () => {
       fetchCategories();
       fetchTags();
       
-      if (!isNewArticle) {
-        fetchArticle(id!);
+      if (!isNewArticle && id) {
+        fetchArticle(id);
       }
     };
     
@@ -78,7 +77,6 @@ const ArticleEditor = () => {
   
   const fetchArticle = async (articleId: string) => {
     try {
-      // Fetch article data
       const { data: articleData, error: articleError } = await supabase
         .from('articles')
         .select('*')
@@ -87,7 +85,6 @@ const ArticleEditor = () => {
       
       if (articleError) throw articleError;
       
-      // Fetch blocks for this article
       const { data: blocksData, error: blocksError } = await supabase
         .from('blocks')
         .select('*')
@@ -96,7 +93,6 @@ const ArticleEditor = () => {
       
       if (blocksError) throw blocksError;
       
-      // Fetch categories for this article
       const { data: articleCategories, error: categoriesError } = await supabase
         .from('article_categories')
         .select('category_id')
@@ -104,7 +100,6 @@ const ArticleEditor = () => {
       
       if (categoriesError) throw categoriesError;
       
-      // Fetch tags for this article
       const { data: articleTags, error: tagsError } = await supabase
         .from('article_tags')
         .select('tag_id')
@@ -168,7 +163,6 @@ const ArticleEditor = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    // Auto-generate slug from title
     if (name === 'title') {
       const slug = value
         .toLowerCase()
@@ -230,7 +224,6 @@ const ArticleEditor = () => {
       const updated = [...prev];
       updated.splice(index, 1);
       
-      // Update order of remaining blocks
       return updated.map((block, idx) => ({
         ...block,
         order: idx,
@@ -246,7 +239,6 @@ const ArticleEditor = () => {
       const [movedBlock] = updated.splice(fromIndex, 1);
       updated.splice(toIndex, 0, movedBlock);
       
-      // Update order of all blocks
       return updated.map((block, idx) => ({
         ...block,
         order: idx,
@@ -348,7 +340,6 @@ const ArticleEditor = () => {
     setSaving(true);
     
     try {
-      // Update status if publishing
       if (publish && article.status !== 'published') {
         setArticle(prev => ({
           ...prev,
@@ -357,11 +348,8 @@ const ArticleEditor = () => {
         }));
       }
       
-      let articleId = article.id;
-      
-      // If new article, insert it first
-      if (isNewArticle || !articleId) {
-        const articleToInsert = {
+      if (isNewArticle) {
+        const { id: _, ...articleToInsert } = {
           ...article,
           status: publish ? 'published' : article.status,
           published_at: publish ? new Date().toISOString() : article.published_at,
@@ -376,105 +364,140 @@ const ArticleEditor = () => {
         if (articleError) throw articleError;
         
         if (newArticle) {
-          articleId = newArticle.id;
           setArticle(newArticle as Article);
+          
+          if (blocks.length > 0) {
+            const blocksToInsert = blocks.map((block, index) => ({
+              article_id: newArticle.id,
+              order: index,
+              type: block.type,
+              data: block.data,
+              created_at: block.created_at,
+              updated_at: new Date().toISOString(),
+            }));
+            
+            const { error: blocksError } = await supabase
+              .from('blocks')
+              .insert(blocksToInsert);
+            
+            if (blocksError) throw blocksError;
+          }
+          
+          if (selectedCategories.length > 0) {
+            const categoriesToInsert = selectedCategories.map(categoryId => ({
+              article_id: newArticle.id,
+              category_id: categoryId
+            }));
+            
+            const { error: categoriesError } = await supabase
+              .from('article_categories')
+              .insert(categoriesToInsert);
+            
+            if (categoriesError) throw categoriesError;
+          }
+          
+          if (selectedTags.length > 0) {
+            const tagsToInsert = selectedTags.map(tagId => ({
+              article_id: newArticle.id,
+              tag_id: tagId
+            }));
+            
+            const { error: tagsError } = await supabase
+              .from('article_tags')
+              .insert(tagsToInsert);
+            
+            if (tagsError) throw tagsError;
+          }
+          
+          toast({
+            title: 'Article created',
+            description: publish 
+              ? 'Your article has been published'
+              : 'Your article has been saved as a draft',
+          });
+          
+          navigate(`/articles/${newArticle.id}`);
         } else {
           throw new Error('Failed to create article');
         }
       } else {
-        // Update existing article
         const { error: updateError } = await supabase
           .from('articles')
           .update({
             ...article,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', articleId);
+          .eq('id', article.id);
         
         if (updateError) throw updateError;
-      }
-      
-      // Save blocks
-      // First, remove any existing blocks if updating
-      if (!isNewArticle) {
+        
         await supabase
           .from('blocks')
           .delete()
-          .eq('article_id', articleId);
-      }
-      
-      // Then insert all current blocks
-      if (blocks.length > 0) {
-        const blocksToInsert = blocks.map((block, index) => ({
-          article_id: articleId,
-          order: index,
-          type: block.type,
-          data: block.data,
-          created_at: block.created_at,
-          updated_at: new Date().toISOString(),
-        }));
+          .eq('article_id', article.id);
         
-        const { error: blocksError } = await supabase
-          .from('blocks')
-          .insert(blocksToInsert);
+        if (blocks.length > 0) {
+          const blocksToInsert = blocks.map((block, index) => ({
+            article_id: article.id,
+            order: index,
+            type: block.type,
+            data: block.data,
+            created_at: block.created_at,
+            updated_at: new Date().toISOString(),
+          }));
+          
+          const { error: blocksError } = await supabase
+            .from('blocks')
+            .insert(blocksToInsert);
+          
+          if (blocksError) throw blocksError;
+        }
         
-        if (blocksError) throw blocksError;
-      }
-      
-      // Handle categories
-      // First, remove existing categories for this article
-      await supabase
-        .from('article_categories')
-        .delete()
-        .eq('article_id', articleId);
-      
-      // Then insert selected categories
-      if (selectedCategories.length > 0) {
-        const categoriesToInsert = selectedCategories.map(categoryId => ({
-          article_id: articleId,
-          category_id: categoryId
-        }));
-        
-        const { error: categoriesError } = await supabase
+        await supabase
           .from('article_categories')
-          .insert(categoriesToInsert);
+          .delete()
+          .eq('article_id', article.id);
         
-        if (categoriesError) throw categoriesError;
-      }
-      
-      // Handle tags
-      // First, remove existing tags for this article
-      await supabase
-        .from('article_tags')
-        .delete()
-        .eq('article_id', articleId);
-      
-      // Then insert selected tags
-      if (selectedTags.length > 0) {
-        const tagsToInsert = selectedTags.map(tagId => ({
-          article_id: articleId,
-          tag_id: tagId
-        }));
+        if (selectedCategories.length > 0) {
+          const categoriesToInsert = selectedCategories.map(categoryId => ({
+            article_id: article.id,
+            category_id: categoryId
+          }));
+          
+          const { error: categoriesError } = await supabase
+            .from('article_categories')
+            .insert(categoriesToInsert);
+          
+          if (categoriesError) throw categoriesError;
+        }
         
-        const { error: tagsError } = await supabase
+        await supabase
           .from('article_tags')
-          .insert(tagsToInsert);
+          .delete()
+          .eq('article_id', article.id);
         
-        if (tagsError) throw tagsError;
-      }
-      
-      toast({
-        title: isNewArticle ? 'Article created' : 'Article updated',
-        description: publish 
-          ? 'Your article has been published'
-          : 'Your changes have been saved as a draft',
-      });
-      
-      // Redirect to articles list or article view
-      if (isNewArticle) {
-        navigate(`/articles/${articleId}`);
+        if (selectedTags.length > 0) {
+          const tagsToInsert = selectedTags.map(tagId => ({
+            article_id: article.id,
+            tag_id: tagId
+          }));
+          
+          const { error: tagsError } = await supabase
+            .from('article_tags')
+            .insert(tagsToInsert);
+          
+          if (tagsError) throw tagsError;
+        }
+        
+        toast({
+          title: 'Article updated',
+          description: publish 
+            ? 'Your article has been published'
+            : 'Your changes have been saved',
+        });
       }
     } catch (error: any) {
+      console.error('Error saving article:', error);
       toast({
         title: 'Error saving article',
         description: error.message,
