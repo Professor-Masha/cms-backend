@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ArticleEditor from "./pages/ArticleEditor";
+import EditorPage from "./pages/EditorPage";
 import MediaLibraryPage from "./pages/MediaLibraryPage";
 import NotFound from "./pages/NotFound";
 
@@ -21,8 +22,10 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/articles/new" element={<ArticleEditor />} />
-          <Route path="/articles/:id" element={<ArticleEditor />} />
+          <Route path="/articles/new" element={<EditorPage />} />
+          <Route path="/articles/:id" element={<EditorPage />} />
+          <Route path="/articles/old/new" element={<ArticleEditor />} />
+          <Route path="/articles/old/:id" element={<ArticleEditor />} />
           <Route path="/media" element={<MediaLibraryPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
