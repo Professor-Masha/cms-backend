@@ -1,10 +1,59 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useReducer } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import ArticleContent from '@/components/editor/ArticleContent';
 import ArticleSidebar from '@/components/editor/ArticleSidebar';
+import EditorToolbar from '@/components/editor/EditorToolbar';
 import { Article, Block, ArticleStatus, Category, Tag, BlockType } from '@/types/cms';
+import { DropResult } from 'react-beautiful-dnd';
+
+type HistoryState = {
+  past: { article: Article; blocks: Block[] }[];
+  present: { article: Article; blocks: Block[] };
+  future: { article: Article; blocks: Block[] }[];
+};
+
+type HistoryAction =
+  | { type: 'SAVE_STATE'; payload: { article: Article; blocks: Block[] } }
+  | { type: 'UNDO' }
+  | { type: 'REDO' }
+  | { type: 'CLEAR_HISTORY'; payload: { article: Article; blocks: Block[] } };
+
+const historyReducer = (state: HistoryState, action: HistoryAction): HistoryState => {
+  switch (action.type) {
+    case 'SAVE_STATE':
+      return {
+        past: [...state.past, state.present],
+        present: action.payload,
+        future: [],
+      };
+    case 'UNDO':
+      if (state.past.length === 0) return state;
+      const previous = state.past[state.past.length - 1];
+      return {
+        past: state.past.slice(0, state.past.length - 1),
+        present: previous,
+        future: [state.present, ...state.future],
+      };
+    case 'REDO':
+      if (state.future.length === 0) return state;
+      const next = state.future[0];
+      return {
+        past: [...state.past, state.present],
+        present: next,
+        future: state.future.slice(1),
+      };
+    case 'CLEAR_HISTORY':
+      return {
+        past: [],
+        present: action.payload,
+        future: [],
+      };
+    default:
+      return state;
+  }
+};
 
 const EditorPage = () => {
   const { id } = useParams();
@@ -12,7 +61,7 @@ const EditorPage = () => {
   const { toast } = useToast();
   const isNewArticle = !id || id === 'new';
   
-  const [article, setArticle] = useState<Article>({
+  const initialArticle: Article = {
     id: '',
     title: '',
     slug: '',
@@ -24,9 +73,16 @@ const EditorPage = () => {
     updated_at: new Date().toISOString(),
     published_at: null,
     keywords: []
+  };
+
+  const [history, dispatch] = useReducer(historyReducer, {
+    past: [],
+    present: { article: initialArticle, blocks: [] },
+    future: [],
   });
+
+  const { article, blocks } = history.present;
   
-  const [blocks, setBlocks] = useState<Block[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -34,6 +90,20 @@ const EditorPage = () => {
   const [loading, setLoading] = useState(!isNewArticle);
   const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  const saveToHistory = () => {
+    dispatch({
+      type: 'SAVE_STATE',
+      payload: { article, blocks },
+    });
+  };
+
+  const updateState = (newArticle: Article, newBlocks: Block[]) => {
+    dispatch({
+      type: 'CLEAR_HISTORY',
+      payload: { article: newArticle, blocks: newBlocks },
+    });
+  };
   
   useEffect(() => {
     const checkAuth = async () => {
@@ -44,10 +114,10 @@ const EditorPage = () => {
         return;
       }
       
-      setArticle(prev => ({
-        ...prev,
-        author_id: session.user.id,
-      }));
+      updateState(
+        { ...article, author_id: session.user.id },
+        blocks
+      );
       
       fetchCategories();
       fetchTags();
@@ -58,6 +128,7 @@ const EditorPage = () => {
     };
     
     checkAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, isNewArticle, navigate]);
   
   const fetchArticle = async (articleId: string) => {
@@ -97,8 +168,10 @@ const EditorPage = () => {
       
       if (tagsError) throw tagsError;
       
-      setArticle(articleWithKeywords as Article);
-      setBlocks(blocksData as Block[] || []);
+      updateState(
+        articleWithKeywords as Article,
+        blocksData as Block[] || []
+      );
       setSelectedCategories(articleCategories.map(ac => ac.category_id));
       setSelectedTags(articleTags.map(at => at.tag_id));
     } catch (error: any) {
@@ -200,6 +273,8 @@ const EditorPage = () => {
   };
   
   const addBlock = (blockType: BlockType) => {
+    saveToHistory();
+    
     const getDefaultData = () => {
       switch (blockType) {
         case 'text':
@@ -298,41 +373,70 @@ const EditorPage = () => {
       updated_at: new Date().toISOString(),
     };
     
-    setBlocks(prev => [...prev, newBlock]);
+    dispatch({
+      type: 'SAVE_STATE',
+      payload: { 
+        article, 
+        blocks: [...blocks, newBlock]
+      }
+    });
   };
   
   const updateBlock = (index: number, data: any) => {
-    setBlocks(prev => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], data, updated_at: new Date().toISOString() };
-      return updated;
+    saveToHistory();
+    
+    const updatedBlocks = [...blocks];
+    updatedBlocks[index] = { 
+      ...updatedBlocks[index], 
+      data, 
+      updated_at: new Date().toISOString() 
+    };
+    
+    dispatch({
+      type: 'SAVE_STATE',
+      payload: { article, blocks: updatedBlocks }
     });
   };
   
   const removeBlock = (index: number) => {
-    setBlocks(prev => {
-      const updated = [...prev];
-      updated.splice(index, 1);
-      
-      return updated.map((block, idx) => ({
-        ...block,
-        order: idx,
-      }));
+    saveToHistory();
+    
+    const updatedBlocks = [...blocks];
+    updatedBlocks.splice(index, 1);
+    
+    const reindexedBlocks = updatedBlocks.map((block, idx) => ({
+      ...block,
+      order: idx,
+    }));
+    
+    dispatch({
+      type: 'SAVE_STATE',
+      payload: { article, blocks: reindexedBlocks }
     });
   };
   
-  const moveBlock = (fromIndex: number, toIndex: number) => {
-    if (toIndex < 0 || toIndex >= blocks.length) return;
+  const handleReorderBlocks = (result: DropResult) => {
+    if (!result.destination) return;
     
-    setBlocks(prev => {
-      const updated = [...prev];
-      const [movedBlock] = updated.splice(fromIndex, 1);
-      updated.splice(toIndex, 0, movedBlock);
-      
-      return updated.map((block, idx) => ({
-        ...block,
-        order: idx,
-      }));
+    saveToHistory();
+    
+    const fromIndex = result.source.index;
+    const toIndex = result.destination.index;
+    
+    if (fromIndex === toIndex) return;
+    
+    const updatedBlocks = [...blocks];
+    const [movedBlock] = updatedBlocks.splice(fromIndex, 1);
+    updatedBlocks.splice(toIndex, 0, movedBlock);
+    
+    const reindexedBlocks = updatedBlocks.map((block, idx) => ({
+      ...block,
+      order: idx,
+    }));
+    
+    dispatch({
+      type: 'SAVE_STATE',
+      payload: { article, blocks: reindexedBlocks }
     });
   };
   
@@ -418,6 +522,21 @@ const EditorPage = () => {
     }
   };
   
+  const handleUndo = () => {
+    dispatch({ type: 'UNDO' });
+  };
+  
+  const handleRedo = () => {
+    dispatch({ type: 'REDO' });
+  };
+  
+  const handlePreview = () => {
+    toast({
+      title: 'Preview',
+      description: 'Preview functionality not implemented yet.',
+    });
+  };
+  
   const handleSave = async (publish: boolean = false) => {
     setSaving(true);
     
@@ -442,7 +561,6 @@ const EditorPage = () => {
         
         if (newArticle) {
           currentArticle = newArticle as Article;
-          setArticle(newArticle as Article);
           
           if (blocks.length > 0) {
             const blocksToInsert = blocks.map((block, index) => ({
@@ -493,6 +611,14 @@ const EditorPage = () => {
               ? 'Your article has been published'
               : 'Your article has been saved as a draft',
           });
+          
+          updateState(
+            newArticle as Article,
+            blocks.map(block => ({
+              ...block,
+              article_id: newArticle.id
+            }))
+          );
           
           navigate(`/articles/${newArticle.id}`);
         }
@@ -568,6 +694,8 @@ const EditorPage = () => {
             ? 'Your article has been published'
             : 'Your changes have been saved',
         });
+        
+        updateState(currentArticle, blocks);
       }
     } catch (error: any) {
       console.error('Error saving article:', error);
@@ -590,59 +718,70 @@ const EditorPage = () => {
   }
   
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">
-          {isNewArticle ? 'Create New Article' : 'Edit Article'}
-        </h1>
-      </div>
+    <div className="h-screen flex flex-col overflow-hidden">
+      <EditorToolbar 
+        status={article.status}
+        onStatusChange={handleStatusChange}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        onSave={() => handleSave(false)}
+        onPublish={() => handleSave(true)}
+        onPreview={handlePreview}
+        canUndo={history.past.length > 0}
+        canRedo={history.future.length > 0}
+        isSaving={saving}
+      />
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          <ArticleContent
-            title={article.title}
-            slug={article.slug}
-            description={article.description || ''}
-            blocks={blocks}
-            onTitleChange={handleTitleChange}
-            onSlugChange={handleSlugChange}
-            onDescriptionChange={handleDescriptionChange}
-            onAddBlock={addBlock}
-            onUpdateBlock={updateBlock}
-            onMoveBlock={moveBlock}
-            onRemoveBlock={removeBlock}
-          />
-        </div>
-        
-        <div>
-          <ArticleSidebar
-            article={{
-              title: article.title,
-              slug: article.slug,
-              description: article.description || '',
-              status: article.status,
-              featured_image: article.featured_image,
-              created_at: article.created_at,
-              published_at: article.published_at,
-              keywords: article.keywords || []
-            }}
-            onArticleChange={handleArticleChange}
-            onStatusChange={handleStatusChange}
-            onKeywordsChange={handleKeywordsChange}
-            categories={categories}
-            tags={tags}
-            selectedCategories={selectedCategories}
-            selectedTags={selectedTags}
-            onCategoryToggle={handleCategoryToggle}
-            onTagToggle={handleTagToggle}
-            onCreateCategory={handleCreateCategory}
-            onCreateTag={handleCreateTag}
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            isSaving={saving}
-            onSave={handleSave}
-            onCancel={() => navigate('/')}
-          />
+      <div className="flex-1 overflow-auto">
+        <div className="container mx-auto px-4 py-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-2">
+              <ArticleContent
+                title={article.title}
+                slug={article.slug}
+                description={article.description || ''}
+                blocks={blocks}
+                onTitleChange={handleTitleChange}
+                onSlugChange={handleSlugChange}
+                onDescriptionChange={handleDescriptionChange}
+                onAddBlock={addBlock}
+                onUpdateBlock={updateBlock}
+                onReorderBlocks={handleReorderBlocks}
+                onRemoveBlock={removeBlock}
+              />
+            </div>
+            
+            <div>
+              <ArticleSidebar
+                article={{
+                  title: article.title,
+                  slug: article.slug,
+                  description: article.description || '',
+                  status: article.status,
+                  featured_image: article.featured_image,
+                  created_at: article.created_at,
+                  published_at: article.published_at,
+                  keywords: article.keywords || []
+                }}
+                onArticleChange={handleArticleChange}
+                onStatusChange={handleStatusChange}
+                onKeywordsChange={handleKeywordsChange}
+                categories={categories}
+                tags={tags}
+                selectedCategories={selectedCategories}
+                selectedTags={selectedTags}
+                onCategoryToggle={handleCategoryToggle}
+                onTagToggle={handleTagToggle}
+                onCreateCategory={handleCreateCategory}
+                onCreateTag={handleCreateTag}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                isSaving={saving}
+                onSave={handleSave}
+                onCancel={() => navigate('/')}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

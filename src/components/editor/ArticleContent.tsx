@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import BlockMenu from './BlockMenu';
-import BlockRenderer from '@/components/editor/BlockRenderer';
+import DraggableBlockList from './DraggableBlockList';
 import { Block, BlockType } from '@/types/cms';
+import { DropResult } from 'react-beautiful-dnd';
 
 interface ArticleContentProps {
   title: string;
@@ -17,7 +18,7 @@ interface ArticleContentProps {
   onDescriptionChange: (value: string) => void;
   onAddBlock: (blockType: BlockType) => void;
   onUpdateBlock: (index: number, data: any) => void;
-  onMoveBlock: (fromIndex: number, toIndex: number) => void;
+  onReorderBlocks: (result: DropResult) => void;
   onRemoveBlock: (index: number) => void;
 }
 
@@ -31,7 +32,7 @@ const ArticleContent: React.FC<ArticleContentProps> = ({
   onDescriptionChange,
   onAddBlock,
   onUpdateBlock,
-  onMoveBlock,
+  onReorderBlocks,
   onRemoveBlock,
 }) => {
   return (
@@ -87,19 +88,12 @@ const ArticleContent: React.FC<ArticleContentProps> = ({
               </div>
             ) : (
               <div className="space-y-6">
-                {blocks.map((block, index) => (
-                  <BlockRenderer
-                    key={block.id}
-                    block={block}
-                    index={index}
-                    onChange={(data) => onUpdateBlock(index, data)}
-                    onDelete={() => onRemoveBlock(index)}
-                    onMoveUp={() => onMoveBlock(index, index - 1)}
-                    onMoveDown={() => onMoveBlock(index, index + 1)}
-                    canMoveUp={index > 0}
-                    canMoveDown={index < blocks.length - 1}
-                  />
-                ))}
+                <DraggableBlockList 
+                  blocks={blocks}
+                  onUpdateBlock={onUpdateBlock}
+                  onRemoveBlock={onRemoveBlock}
+                  onReorderBlocks={onReorderBlocks}
+                />
                 
                 <BlockMenu onAddBlock={onAddBlock} />
               </div>

@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Block } from '@/types/cms';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowUp, ArrowDown, Trash2, GripVertical } from 'lucide-react';
+import { Trash2, GripVertical } from 'lucide-react';
 import TextBlock from './blocks/TextBlock';
 import HeadingBlock from './blocks/HeadingBlock';
 import ImageBlock from './blocks/ImageBlock';
@@ -32,6 +31,7 @@ interface BlockRendererProps {
   onMoveDown: () => void;
   canMoveUp: boolean;
   canMoveDown: boolean;
+  dragHandleProps?: any;
 }
 
 const BlockRenderer: React.FC<BlockRendererProps> = ({
@@ -43,6 +43,7 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({
   onMoveDown,
   canMoveUp,
   canMoveDown,
+  dragHandleProps
 }) => {
   const renderBlockContent = () => {
     switch (block.type) {
@@ -95,28 +96,12 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({
     <Card>
       <div className="bg-muted p-2 rounded-t-md flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <GripVertical className="text-muted-foreground" size={16} />
+          <div {...dragHandleProps}>
+            <GripVertical className="text-muted-foreground cursor-grab" size={16} />
+          </div>
           <span className="text-sm font-medium capitalize">{block.type} Block</span>
         </div>
         <div className="flex items-center gap-1">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={onMoveUp}
-            disabled={!canMoveUp}
-            className="h-8 w-8"
-          >
-            <ArrowUp size={16} />
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={onMoveDown}
-            disabled={!canMoveDown}
-            className="h-8 w-8"
-          >
-            <ArrowDown size={16} />
-          </Button>
           <Button 
             variant="ghost" 
             size="icon"
