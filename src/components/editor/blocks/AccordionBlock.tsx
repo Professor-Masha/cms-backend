@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -211,7 +210,6 @@ const AccordionBlock: React.FC<AccordionBlockProps> = ({ data, onChange }) => {
                       className="cursor-grab text-muted-foreground mr-2 touch-none p-1"
                       onMouseDown={(e) => {
                         e.preventDefault();
-                        // This would be replaced with actual drag functionality
                       }}
                     >
                       <GripVertical size={16} />
@@ -268,7 +266,6 @@ const AccordionBlock: React.FC<AccordionBlockProps> = ({ data, onChange }) => {
           <Accordion
             type="multiple"
             defaultValue={data.items.map(item => item.id)}
-            collapsible={data.collapsible}
             className={`${
               data.style === 'bordered' ? 'border rounded-md p-1' :
               data.style === 'simple' ? 'space-y-1' : ''
