@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -171,14 +170,12 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
     },
   });
 
-  // Update the editor's content when data.content changes
   useEffect(() => {
     if (editor && data.content && editor.getHTML() !== data.content) {
       editor.commands.setContent(data.content);
     }
   }, [editor, data.content]);
 
-  // Update paragraph alignment
   useEffect(() => {
     if (editor && data.alignment) {
       editor.chain().focus().updateAttributes('paragraph', {
@@ -196,7 +193,7 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
     // Use a different approach to set links since setLink is not available
     editor.chain().focus().extendMarkRange('link')
       .unsetLink()
-      .createLink({ href: linkUrl })
+      .setLink({ href: linkUrl })
       .run();
     setLinkUrl('');
     setShowLinkInput(false);
