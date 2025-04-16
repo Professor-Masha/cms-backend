@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import BlockMenu from './BlockMenu';
 import DraggableBlockList from './DraggableBlockList';
@@ -22,6 +22,11 @@ const ArticleContent: React.FC<ArticleContentProps> = ({
   onReorderBlocks,
   onRemoveBlock,
 }) => {
+  // Add debugging to track when blocks are created/rendered
+  useEffect(() => {
+    console.log('Current blocks:', blocks);
+  }, [blocks]);
+
   // Enhanced handler for drag end event with support for duplication
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
@@ -65,6 +70,7 @@ const ArticleContent: React.FC<ArticleContentProps> = ({
 
   // Function to handle block type creation
   const handleAddBlock = (blockType: BlockType) => {
+    console.log('Adding block of type:', blockType);
     onAddBlock(blockType);
   };
 

@@ -23,7 +23,8 @@ const BlockSelector: React.FC<BlockSelectorProps> = ({ onSelectBlock }) => {
   };
 
   const coreBlocks: Array<{ type: BlockType; name: string; description: string }> = [
-    { type: 'text', name: 'Text', description: 'Rich text paragraphs' },
+    { type: 'paragraph', name: 'Paragraph', description: 'Rich formatted text with advanced options' },
+    { type: 'text', name: 'Text', description: 'Simple text content' },
     { type: 'heading', name: 'Heading', description: 'H1-H6 titles' },
     { type: 'list', name: 'List', description: 'Bulleted or numbered list' },
     { type: 'quote', name: 'Quote', description: 'Quotation or testimonial' },
