@@ -24,11 +24,15 @@ const DraggableBlockList: React.FC<DraggableBlockListProps> = ({
 
   const handleMoveUp = (index: number) => {
     if (index > 0) {
-      const result = {
-        source: { index },
-        destination: { index: index - 1 },
-        draggableId: blocks[index].id
-      } as DropResult;
+      const result: DropResult = {
+        source: { index, droppableId: 'blocks' },
+        destination: { index: index - 1, droppableId: 'blocks' },
+        draggableId: blocks[index].id,
+        type: 'DEFAULT',
+        reason: 'DROP',
+        mode: 'FLUID',
+        combine: null
+      };
       
       onReorderBlocks(result);
     }
@@ -36,11 +40,15 @@ const DraggableBlockList: React.FC<DraggableBlockListProps> = ({
 
   const handleMoveDown = (index: number) => {
     if (index < blocks.length - 1) {
-      const result = {
-        source: { index },
-        destination: { index: index + 1 },
-        draggableId: blocks[index].id
-      } as DropResult;
+      const result: DropResult = {
+        source: { index, droppableId: 'blocks' },
+        destination: { index: index + 1, droppableId: 'blocks' },
+        draggableId: blocks[index].id,
+        type: 'DEFAULT',
+        reason: 'DROP',
+        mode: 'FLUID',
+        combine: null
+      };
       
       onReorderBlocks(result);
     }
@@ -64,14 +72,18 @@ const DraggableBlockList: React.FC<DraggableBlockListProps> = ({
     };
     
     // Insert the duplicated block right after the original one
-    const result = {
-      source: { index: -1 }, // Special flag for duplication
-      destination: { index: index + 1 },
+    const customResult = {
+      source: { index: -1, droppableId: 'blocks' },
+      destination: { index: index + 1, droppableId: 'blocks' },
       draggableId: newBlock.id,
+      type: 'DEFAULT',
+      reason: 'DROP',
+      mode: 'FLUID',
+      combine: null,
       duplicatedBlock: newBlock
     } as unknown as DropResult;
     
-    onReorderBlocks(result);
+    onReorderBlocks(customResult);
   };
 
   const handleGroupBlocks = () => {

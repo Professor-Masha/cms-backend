@@ -51,7 +51,8 @@ const ArticleContent: React.FC<ArticleContentProps> = ({
           droppableId: 'blocks'
         },
         reason: 'DROP',
-        mode: 'FLUID'
+        mode: 'FLUID',
+        combine: null
       };
       
       // Pass both the blocks and the result to the parent
