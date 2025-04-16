@@ -1,3 +1,4 @@
+
 export type BlockType = 
   // Core blocks
   | 'text'
@@ -7,6 +8,7 @@ export type BlockType =
   | 'button'
   | 'divider'
   | 'navigation'
+  | 'paragraph'
   
   // Media blocks
   | 'image'
