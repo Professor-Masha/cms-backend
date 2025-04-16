@@ -1,5 +1,16 @@
-import React, { useState } from 'react';
-import { Textarea } from '@/components/ui/textarea';
+
+import React, { useEffect } from 'react';
+import { EditorContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
+import Link from '@tiptap/extension-link';
+import Highlight from '@tiptap/extension-highlight';
+import Superscript from '@tiptap/extension-superscript';
+import Subscript from '@tiptap/extension-subscript';
+import TextStyle from '@tiptap/extension-text-style';
+import Color from '@tiptap/extension-color';
+import Image from '@tiptap/extension-image';
+import Code from '@tiptap/extension-code';
 import { Button } from '@/components/ui/button';
 import { 
   AlignLeft, 
@@ -8,15 +19,13 @@ import {
   AlignJustify, 
   Bold, 
   Italic, 
-  Link, 
+  Link as LinkIcon, 
   Highlighter, 
-  Code, 
+  Code as CodeIcon, 
   Superscript, 
   Subscript, 
-  Strikethrough, 
-  Heading1, 
-  Type,
-  Image,
+  Strikethrough,
+  Image as ImageIcon,
   Keyboard,
   BookmarkPlus,
   Languages,
@@ -44,6 +53,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from '@/components/ui/textarea';
 
 interface ParagraphBlockProps {
   data: {
@@ -71,25 +81,19 @@ interface ParagraphBlockProps {
 }
 
 const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
-  const [selectedText, setSelectedText] = useState<{
-    start: number;
-    end: number;
-    text: string;
-  } | null>(null);
-  
-  const [linkUrl, setLinkUrl] = useState('');
-  const [showLinkInput, setShowLinkInput] = useState(false);
-  const [showHighlightPicker, setShowHighlightPicker] = useState(false);
-  const [textColor, setTextColor] = useState('#000000');
-  const [bgColor, setBgColor] = useState('#ffff00');
-  const [showInlineImageInput, setShowInlineImageInput] = useState(false);
-  const [inlineImageUrl, setInlineImageUrl] = useState('');
-  const [inlineImageWidth, setInlineImageWidth] = useState('100');
-  const [inlineImageAlt, setInlineImageAlt] = useState('');
-  const [showFootnoteInput, setShowFootnoteInput] = useState(false);
-  const [footnoteContent, setFootnoteContent] = useState('');
-  const [showLanguageInput, setShowLanguageInput] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState('');
+  const [linkUrl, setLinkUrl] = React.useState('');
+  const [showLinkInput, setShowLinkInput] = React.useState(false);
+  const [showHighlightPicker, setShowHighlightPicker] = React.useState(false);
+  const [textColor, setTextColor] = React.useState('#000000');
+  const [bgColor, setBgColor] = React.useState('#ffff00');
+  const [showInlineImageInput, setShowInlineImageInput] = React.useState(false);
+  const [inlineImageUrl, setInlineImageUrl] = React.useState('');
+  const [inlineImageWidth, setInlineImageWidth] = React.useState('100');
+  const [inlineImageAlt, setInlineImageAlt] = React.useState('');
+  const [showFootnoteInput, setShowFootnoteInput] = React.useState(false);
+  const [footnoteContent, setFootnoteContent] = React.useState('');
+  const [showLanguageInput, setShowLanguageInput] = React.useState(false);
+  const [selectedLanguage, setSelectedLanguage] = React.useState('');
   
   const commonLanguages = [
     { value: 'en', label: 'English' },
@@ -106,168 +110,6 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
     { value: 'code', label: 'Code' },
   ];
   
-  const handleTextSelect = (e: React.MouseEvent<HTMLTextAreaElement>) => {
-    const target = e.target as HTMLTextAreaElement;
-    const start = target.selectionStart;
-    const end = target.selectionEnd;
-    
-    if (start !== end) {
-      setSelectedText({
-        start,
-        end,
-        text: data.content.substring(start, end),
-      });
-    } else {
-      setSelectedText(null);
-    }
-  };
-  
-  const applyTextFormat = (format: string) => {
-    if (!selectedText) return;
-    
-    let newContent = data.content;
-    let formattedText = selectedText.text;
-    
-    switch (format) {
-      case 'bold':
-        formattedText = `<strong>${formattedText}</strong>`;
-        break;
-      case 'italic':
-        formattedText = `<em>${formattedText}</em>`;
-        break;
-      case 'strikethrough':
-        formattedText = `<del>${formattedText}</del>`;
-        break;
-      case 'highlight':
-        formattedText = `<mark>${formattedText}</mark>`;
-        break;
-      case 'code':
-        formattedText = `<code>${formattedText}</code>`;
-        break;
-      case 'superscript':
-        formattedText = `<sup>${formattedText}</sup>`;
-        break;
-      case 'subscript':
-        formattedText = `<sub>${formattedText}</sub>`;
-        break;
-      case 'kbd':
-        formattedText = `<kbd>${formattedText}</kbd>`;
-        break;
-      case 'uppercase':
-        formattedText = formattedText.toUpperCase();
-        break;
-      default:
-        break;
-    }
-    
-    newContent = 
-      newContent.substring(0, selectedText.start) + 
-      formattedText + 
-      newContent.substring(selectedText.end);
-    
-    onChange({ ...data, content: newContent });
-    setSelectedText(null);
-  };
-  
-  const applyLink = () => {
-    if (!selectedText || !linkUrl) return;
-    
-    const formattedText = `<a href="${linkUrl}">${selectedText.text}</a>`;
-    const newContent = 
-      data.content.substring(0, selectedText.start) + 
-      formattedText + 
-      data.content.substring(selectedText.end);
-    
-    onChange({ ...data, content: newContent });
-    setSelectedText(null);
-    setLinkUrl('');
-    setShowLinkInput(false);
-  };
-
-  const applyHighlight = () => {
-    if (!selectedText) return;
-    
-    const formattedText = `<span style="color:${textColor};background-color:${bgColor};">${selectedText.text}</span>`;
-    const newContent = 
-      data.content.substring(0, selectedText.start) + 
-      formattedText + 
-      data.content.substring(selectedText.end);
-    
-    onChange({ ...data, content: newContent });
-    setSelectedText(null);
-    setShowHighlightPicker(false);
-  };
-
-  const insertInlineImage = () => {
-    if (!selectedText && !inlineImageUrl) return;
-    
-    const formattedText = `<img src="${inlineImageUrl}" alt="${inlineImageAlt}" width="${inlineImageWidth}" style="display:inline;vertical-align:middle;" />`;
-    
-    let newContent;
-    if (selectedText) {
-      newContent = 
-        data.content.substring(0, selectedText.start) + 
-        formattedText + 
-        data.content.substring(selectedText.end);
-    } else {
-      const cursorPos = (document.activeElement as HTMLTextAreaElement)?.selectionStart || data.content.length;
-      newContent = 
-        data.content.substring(0, cursorPos) + 
-        formattedText + 
-        data.content.substring(cursorPos);
-    }
-    
-    onChange({ ...data, content: newContent });
-    setSelectedText(null);
-    setInlineImageUrl('');
-    setInlineImageAlt('');
-    setInlineImageWidth('100');
-    setShowInlineImageInput(false);
-  };
-
-  const insertFootnote = () => {
-    if (!selectedText || !footnoteContent) return;
-    
-    const footnoteId = `footnote-${Date.now()}`;
-    
-    const footnoteReference = `<sup><a href="#${footnoteId}" id="${footnoteId}-ref">[${(data.footnotes?.length || 0) + 1}]</a></sup>`;
-    
-    const newContent = 
-      data.content.substring(0, selectedText.end) + 
-      footnoteReference + 
-      data.content.substring(selectedText.end);
-    
-    const newFootnotes = [...(data.footnotes || []), {
-      id: footnoteId,
-      content: footnoteContent
-    }];
-    
-    onChange({ 
-      ...data, 
-      content: newContent,
-      footnotes: newFootnotes
-    });
-    
-    setSelectedText(null);
-    setFootnoteContent('');
-    setShowFootnoteInput(false);
-  };
-
-  const applyLanguage = () => {
-    if (!selectedText || !selectedLanguage) return;
-    
-    const formattedText = `<span lang="${selectedLanguage}">${selectedText.text}</span>`;
-    const newContent = 
-      data.content.substring(0, selectedText.start) + 
-      formattedText + 
-      data.content.substring(selectedText.end);
-    
-    onChange({ ...data, content: newContent });
-    setSelectedText(null);
-    setSelectedLanguage('');
-    setShowLanguageInput(false);
-  };
-
   const commonColors = [
     { text: '#000000', bg: '#ffff00' },
     { text: '#ffffff', bg: '#ff0000' },
@@ -290,6 +132,176 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
     { url: 'https://images.unsplash.com/photo-1531297484001-80022131f5a1', desc: 'Gray and black laptop on surface' },
     { url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f', desc: 'Laptop on glass table' },
   ];
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        paragraph: { 
+          HTMLAttributes: { 
+            class: data.alignment ? `text-${data.alignment}` : 'text-left'
+          }
+        }
+      }),
+      Underline,
+      Link.configure({
+        openOnClick: true,
+        HTMLAttributes: {
+          class: 'text-primary underline cursor-pointer',
+        },
+      }),
+      Highlight.configure({
+        multicolor: true,
+      }),
+      Superscript,
+      Subscript,
+      TextStyle,
+      Color,
+      Image.configure({
+        inline: true,
+        allowBase64: true,
+      }),
+      Code,
+    ],
+    content: data.content || '<p>Start writing...</p>',
+    onUpdate: ({ editor }) => {
+      onChange({ 
+        ...data, 
+        content: editor.getHTML()
+      });
+    },
+  });
+
+  // Update the editor's content when data.content changes
+  useEffect(() => {
+    if (editor && data.content && editor.getHTML() !== data.content) {
+      editor.commands.setContent(data.content);
+    }
+  }, [editor, data.content]);
+
+  // Update paragraph alignment
+  useEffect(() => {
+    if (editor && data.alignment) {
+      editor.chain().focus().updateAttributes('paragraph', {
+        class: `text-${data.alignment}`
+      }).run();
+    }
+  }, [editor, data.alignment]);
+
+  if (!editor) {
+    return <div>Loading editor...</div>;
+  }
+
+  const applyLink = () => {
+    if (!linkUrl) return;
+    editor.chain().focus().extendMarkRange('link').setLink({ href: linkUrl }).run();
+    setLinkUrl('');
+    setShowLinkInput(false);
+  };
+
+  const applyHighlight = () => {
+    editor.chain().focus().toggleHighlight({ color: bgColor }).run();
+    setShowHighlightPicker(false);
+  };
+
+  const insertInlineImage = () => {
+    if (!inlineImageUrl) return;
+    
+    editor
+      .chain()
+      .focus()
+      .setImage({ 
+        src: inlineImageUrl,
+        alt: inlineImageAlt,
+        width: `${inlineImageWidth}px`,
+        style: 'display:inline;vertical-align:middle;',
+      })
+      .run();
+
+    setInlineImageUrl('');
+    setInlineImageAlt('');
+    setInlineImageWidth('100');
+    setShowInlineImageInput(false);
+  };
+
+  const insertFootnote = () => {
+    if (!footnoteContent) return;
+    
+    const footnoteId = `footnote-${Date.now()}`;
+    
+    const footnoteReference = `<sup><a href="#${footnoteId}" id="${footnoteId}-ref">[${(data.footnotes?.length || 0) + 1}]</a></sup>`;
+    
+    editor.chain().focus().insertContent(footnoteReference).run();
+    
+    const newFootnotes = [...(data.footnotes || []), {
+      id: footnoteId,
+      content: footnoteContent
+    }];
+    
+    onChange({ 
+      ...data, 
+      content: editor.getHTML(),
+      footnotes: newFootnotes
+    });
+    
+    setFootnoteContent('');
+    setShowFootnoteInput(false);
+  };
+
+  const applyLanguage = () => {
+    if (!selectedLanguage) return;
+    
+    editor.chain().focus().extendMarkRange('textStyle').setAttributes('span', {
+      lang: selectedLanguage
+    }).run();
+    
+    setSelectedLanguage('');
+    setShowLanguageInput(false);
+  };
+
+  const applyTextFormat = (format: string) => {
+    switch (format) {
+      case 'bold':
+        editor.chain().focus().toggleBold().run();
+        break;
+      case 'italic':
+        editor.chain().focus().toggleItalic().run();
+        break;
+      case 'strikethrough':
+        editor.chain().focus().toggleStrike().run();
+        break;
+      case 'code':
+        editor.chain().focus().toggleCode().run();
+        break;
+      case 'superscript':
+        editor.chain().focus().toggleSuperscript().run();
+        break;
+      case 'subscript':
+        editor.chain().focus().toggleSubscript().run();
+        break;
+      case 'kbd':
+        // Custom for keyboard input - wrap in <kbd> tags
+        const { from, to } = editor.state.selection;
+        const text = editor.state.doc.textBetween(from, to, '');
+        if (text) {
+          editor.chain().focus().insertContent(`<kbd>${text}</kbd>`).run();
+        }
+        break;
+      case 'uppercase':
+        // For uppercase, we get the selected text and replace it with its uppercase version
+        const selection = editor.state.selection;
+        const selectedText = editor.state.doc.textBetween(
+          selection.from, 
+          selection.to,
+          ''
+        );
+        if (selectedText) {
+          editor.chain().focus().insertContent(selectedText.toUpperCase()).run();
+        }
+        break;
+      default:
+        break;
+    }
+  };
 
   return (
     <div className="space-y-2">
@@ -374,9 +386,8 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-8 w-8"
+                className={`h-8 w-8 ${editor.isActive('bold') ? 'bg-accent' : ''}`}
                 onClick={() => applyTextFormat('bold')}
-                disabled={!selectedText}
               >
                 <Bold size={16} />
               </Button>
@@ -393,9 +404,8 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-8 w-8"
+                className={`h-8 w-8 ${editor.isActive('italic') ? 'bg-accent' : ''}`}
                 onClick={() => applyTextFormat('italic')}
-                disabled={!selectedText}
               >
                 <Italic size={16} />
               </Button>
@@ -412,9 +422,8 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-8 w-8"
+                className={`h-8 w-8 ${editor.isActive('strike') ? 'bg-accent' : ''}`}
                 onClick={() => applyTextFormat('strikethrough')}
-                disabled={!selectedText}
               >
                 <Strikethrough size={16} />
               </Button>
@@ -433,7 +442,6 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
                 size="icon" 
                 className="h-8 w-8"
                 onClick={() => applyTextFormat('uppercase')}
-                disabled={!selectedText}
               >
                 <ArrowUpWideNarrow size={16} />
               </Button>
@@ -449,8 +457,7 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-8 w-8"
-              disabled={!selectedText}
+              className={`h-8 w-8 ${editor.isActive('highlight') ? 'bg-accent' : ''}`}
             >
               <Highlighter size={16} />
             </Button>
@@ -530,11 +537,10 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-8 w-8"
+                className={`h-8 w-8 ${editor.isActive('code') ? 'bg-accent' : ''}`}
                 onClick={() => applyTextFormat('code')}
-                disabled={!selectedText}
               >
-                <Code size={16} />
+                <CodeIcon size={16} />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -549,9 +555,8 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-8 w-8"
+                className={`h-8 w-8 ${editor.isActive('superscript') ? 'bg-accent' : ''}`}
                 onClick={() => applyTextFormat('superscript')}
-                disabled={!selectedText}
               >
                 <Superscript size={16} />
               </Button>
@@ -568,9 +573,8 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-8 w-8"
+                className={`h-8 w-8 ${editor.isActive('subscript') ? 'bg-accent' : ''}`}
                 onClick={() => applyTextFormat('subscript')}
-                disabled={!selectedText}
               >
                 <Subscript size={16} />
               </Button>
@@ -589,7 +593,6 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
                 size="icon" 
                 className="h-8 w-8"
                 onClick={() => applyTextFormat('kbd')}
-                disabled={!selectedText}
               >
                 <Keyboard size={16} />
               </Button>
@@ -606,7 +609,6 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
               variant="ghost" 
               size="icon" 
               className="h-8 w-8"
-              disabled={!selectedText}
             >
               <BookmarkPlus size={16} />
             </Button>
@@ -640,7 +642,6 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
               variant="ghost" 
               size="icon" 
               className="h-8 w-8"
-              disabled={!selectedText}
             >
               <Languages size={16} />
             </Button>
@@ -681,10 +682,9 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-8 w-8"
-              disabled={!selectedText}
+              className={`h-8 w-8 ${editor.isActive('link') ? 'bg-accent' : ''}`}
             >
-              <Link size={16} />
+              <LinkIcon size={16} />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-80">
@@ -710,7 +710,7 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
               size="icon" 
               className="h-8 w-8"
             >
-              <Image size={16} />
+              <ImageIcon size={16} />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-80">
@@ -779,19 +779,16 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
         </Popover>
       </div>
       
-      <Textarea
-        className={`min-h-[150px] text-${data.alignment || 'left'}`}
-        value={data.content}
-        onChange={(e) => onChange({ ...data, content: e.target.value })}
-        onMouseUp={handleTextSelect}
-        placeholder="Start writing..."
+      <div 
+        className={`min-h-[150px] border rounded-md p-2 ${data.alignment ? `text-${data.alignment}` : ''}`}
         style={{
           fontSize: data.fontSize || 'inherit',
           color: data.textColor || 'inherit',
           backgroundColor: data.backgroundColor || 'inherit',
-          textAlign: data.alignment || 'left'
         }}
-      />
+      >
+        <EditorContent editor={editor} />
+      </div>
       
       {data.footnotes && data.footnotes.length > 0 && (
         <div className="mt-4 pt-4 border-t">
