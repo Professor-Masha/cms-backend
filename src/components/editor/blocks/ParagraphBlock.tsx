@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -19,9 +18,9 @@ import {
   Type,
   Image,
   Keyboard,
-  Footnote,
+  BookmarkPlus,
   Languages,
-  UpperCase
+  ArrowUpWideNarrow
 } from 'lucide-react';
 import {
   Popover,
@@ -92,7 +91,6 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
   const [showLanguageInput, setShowLanguageInput] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('');
   
-  // Define common languages
   const commonLanguages = [
     { value: 'en', label: 'English' },
     { value: 'es', label: 'Spanish' },
@@ -212,7 +210,6 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
         formattedText + 
         data.content.substring(selectedText.end);
     } else {
-      // Insert at cursor position or at the end
       const cursorPos = (document.activeElement as HTMLTextAreaElement)?.selectionStart || data.content.length;
       newContent = 
         data.content.substring(0, cursorPos) + 
@@ -231,19 +228,15 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
   const insertFootnote = () => {
     if (!selectedText || !footnoteContent) return;
     
-    // Create footnote ID
     const footnoteId = `footnote-${Date.now()}`;
     
-    // Create the footnote reference
     const footnoteReference = `<sup><a href="#${footnoteId}" id="${footnoteId}-ref">[${(data.footnotes?.length || 0) + 1}]</a></sup>`;
     
-    // Insert the reference
     const newContent = 
       data.content.substring(0, selectedText.end) + 
       footnoteReference + 
       data.content.substring(selectedText.end);
     
-    // Add the footnote to the data
     const newFootnotes = [...(data.footnotes || []), {
       id: footnoteId,
       content: footnoteContent
@@ -275,23 +268,21 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
     setShowLanguageInput(false);
   };
 
-  // Common colors for the highlight feature
   const commonColors = [
-    { text: '#000000', bg: '#ffff00' }, // Black on Yellow
-    { text: '#ffffff', bg: '#ff0000' }, // White on Red
-    { text: '#ffffff', bg: '#0000ff' }, // White on Blue
-    { text: '#ffffff', bg: '#008000' }, // White on Green
-    { text: '#000000', bg: '#ffffff' }, // Black on White
-    { text: '#ffffff', bg: '#000000' }, // White on Black
-    { text: '#9b87f5', bg: 'transparent' }, // Purple text
-    { text: '#F97316', bg: 'transparent' }, // Orange text
-    { text: '#0EA5E9', bg: 'transparent' }, // Blue text
-    { text: '#fff', bg: '#9b87f5' }, // White on Purple
-    { text: '#fff', bg: '#F97316' }, // White on Orange
-    { text: '#fff', bg: '#0EA5E9' }, // White on Blue
+    { text: '#000000', bg: '#ffff00' },
+    { text: '#ffffff', bg: '#ff0000' },
+    { text: '#ffffff', bg: '#0000ff' },
+    { text: '#ffffff', bg: '#008000' },
+    { text: '#000000', bg: '#ffffff' },
+    { text: '#ffffff', bg: '#000000' },
+    { text: '#9b87f5', bg: 'transparent' },
+    { text: '#F97316', bg: 'transparent' },
+    { text: '#0EA5E9', bg: 'transparent' },
+    { text: '#fff', bg: '#9b87f5' },
+    { text: '#fff', bg: '#F97316' },
+    { text: '#fff', bg: '#0EA5E9' },
   ];
 
-  // Placeholder image URLs
   const placeholderImages = [
     { url: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b', desc: 'Gray laptop computer' },
     { url: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6', desc: 'Monitor showing code' },
@@ -444,7 +435,7 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
                 onClick={() => applyTextFormat('uppercase')}
                 disabled={!selectedText}
               >
-                <UpperCase size={16} />
+                <ArrowUpWideNarrow size={16} />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -617,7 +608,7 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
               className="h-8 w-8"
               disabled={!selectedText}
             >
-              <Footnote size={16} />
+              <BookmarkPlus size={16} />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-80">
