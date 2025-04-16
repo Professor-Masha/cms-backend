@@ -123,6 +123,24 @@ const BlockSettings: React.FC<BlockSettingsProps> = ({ block, onChange }) => {
             </div>
             
             <div>
+              <Label htmlFor="text-alignment">Alignment</Label>
+              <Select 
+                value={block.data.alignment || 'left'} 
+                onValueChange={(value) => onChange({ ...block.data, alignment: value })}
+              >
+                <SelectTrigger id="text-alignment">
+                  <SelectValue placeholder="Select alignment" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="left">Left</SelectItem>
+                  <SelectItem value="center">Center</SelectItem>
+                  <SelectItem value="right">Right</SelectItem>
+                  <SelectItem value="justify">Justify</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
               <Label htmlFor="text-color">Text Color</Label>
               <Input 
                 id="text-color" 

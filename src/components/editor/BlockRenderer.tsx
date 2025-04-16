@@ -13,6 +13,7 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  AlignJustify,
   Group
 } from 'lucide-react';
 import {
@@ -144,7 +145,7 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({
   const renderBlockToolbar = () => {
     const commonTools = (
       <>
-        {block.type === 'text' || block.type === 'heading' ? (
+        {block.type === 'text' || block.type === 'heading' || block.type === 'paragraph' ? (
           <>
             <TooltipProvider>
               <Tooltip>
@@ -181,6 +182,19 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Align Right</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onChange({...block.data, alignment: 'justify'})}>
+                    <AlignJustify size={16} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Justify</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

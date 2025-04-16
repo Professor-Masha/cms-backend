@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { 
   AlignLeft, 
   AlignCenter, 
-  AlignRight, 
+  AlignRight,
+  AlignJustify, 
   Bold, 
   Italic, 
   Link, 
@@ -17,7 +18,10 @@ import {
   Heading1, 
   Type,
   Image,
-  Keyboard
+  Keyboard,
+  Footnote,
+  Languages,
+  UpperCase
 } from 'lucide-react';
 import {
   Popover,
@@ -34,11 +38,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ParagraphBlockProps {
   data: {
     content: string;
-    alignment?: 'left' | 'center' | 'right';
+    alignment?: 'left' | 'center' | 'right' | 'justify';
     format?: {
       bold?: boolean;
       italic?: boolean;
@@ -52,6 +63,10 @@ interface ParagraphBlockProps {
     textColor?: string;
     backgroundColor?: string;
     cssClass?: string;
+    footnotes?: {
+      id: string;
+      content: string;
+    }[];
   };
   onChange: (data: any) => void;
 }
@@ -72,6 +87,26 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
   const [inlineImageUrl, setInlineImageUrl] = useState('');
   const [inlineImageWidth, setInlineImageWidth] = useState('100');
   const [inlineImageAlt, setInlineImageAlt] = useState('');
+  const [showFootnoteInput, setShowFootnoteInput] = useState(false);
+  const [footnoteContent, setFootnoteContent] = useState('');
+  const [showLanguageInput, setShowLanguageInput] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState('');
+  
+  // Define common languages
+  const commonLanguages = [
+    { value: 'en', label: 'English' },
+    { value: 'es', label: 'Spanish' },
+    { value: 'fr', label: 'French' },
+    { value: 'de', label: 'German' },
+    { value: 'it', label: 'Italian' },
+    { value: 'pt', label: 'Portuguese' },
+    { value: 'ru', label: 'Russian' },
+    { value: 'ja', label: 'Japanese' },
+    { value: 'zh', label: 'Chinese' },
+    { value: 'ar', label: 'Arabic' },
+    { value: 'hi', label: 'Hindi' },
+    { value: 'code', label: 'Code' },
+  ];
   
   const handleTextSelect = (e: React.MouseEvent<HTMLTextAreaElement>) => {
     const target = e.target as HTMLTextAreaElement;
@@ -119,6 +154,9 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
         break;
       case 'kbd':
         formattedText = `<kbd>${formattedText}</kbd>`;
+        break;
+      case 'uppercase':
+        formattedText = formattedText.toUpperCase();
         break;
       default:
         break;
@@ -188,6 +226,53 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
     setInlineImageAlt('');
     setInlineImageWidth('100');
     setShowInlineImageInput(false);
+  };
+
+  const insertFootnote = () => {
+    if (!selectedText || !footnoteContent) return;
+    
+    // Create footnote ID
+    const footnoteId = `footnote-${Date.now()}`;
+    
+    // Create the footnote reference
+    const footnoteReference = `<sup><a href="#${footnoteId}" id="${footnoteId}-ref">[${(data.footnotes?.length || 0) + 1}]</a></sup>`;
+    
+    // Insert the reference
+    const newContent = 
+      data.content.substring(0, selectedText.end) + 
+      footnoteReference + 
+      data.content.substring(selectedText.end);
+    
+    // Add the footnote to the data
+    const newFootnotes = [...(data.footnotes || []), {
+      id: footnoteId,
+      content: footnoteContent
+    }];
+    
+    onChange({ 
+      ...data, 
+      content: newContent,
+      footnotes: newFootnotes
+    });
+    
+    setSelectedText(null);
+    setFootnoteContent('');
+    setShowFootnoteInput(false);
+  };
+
+  const applyLanguage = () => {
+    if (!selectedText || !selectedLanguage) return;
+    
+    const formattedText = `<span lang="${selectedLanguage}">${selectedText.text}</span>`;
+    const newContent = 
+      data.content.substring(0, selectedText.start) + 
+      formattedText + 
+      data.content.substring(selectedText.end);
+    
+    onChange({ ...data, content: newContent });
+    setSelectedText(null);
+    setSelectedLanguage('');
+    setShowLanguageInput(false);
   };
 
   // Common colors for the highlight feature
@@ -272,6 +357,24 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
           </Tooltip>
         </TooltipProvider>
         
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={`h-8 w-8 ${data.alignment === 'justify' ? 'bg-accent' : ''}`}
+                onClick={() => onChange({...data, alignment: 'justify'})}
+              >
+                <AlignJustify size={16} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Justify</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
         <Separator orientation="vertical" className="h-6 mx-1" />
         
         <TooltipProvider>
@@ -327,6 +430,25 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
             </TooltipTrigger>
             <TooltipContent>
               <p>Strikethrough</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8"
+                onClick={() => applyTextFormat('uppercase')}
+                disabled={!selectedText}
+              >
+                <UpperCase size={16} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Uppercase</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -486,6 +608,82 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+
+        <Popover open={showFootnoteInput} onOpenChange={setShowFootnoteInput}>
+          <PopoverTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8"
+              disabled={!selectedText}
+            >
+              <Footnote size={16} />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80">
+            <div className="space-y-4">
+              <h4 className="font-medium mb-2">Add Footnote</h4>
+              <div className="space-y-2">
+                <Label htmlFor="footnote-content">Footnote Text</Label>
+                <Textarea 
+                  id="footnote-content" 
+                  placeholder="Enter footnote content..." 
+                  value={footnoteContent}
+                  onChange={(e) => setFootnoteContent(e.target.value)}
+                  className="min-h-[80px]"
+                />
+              </div>
+              <Button 
+                onClick={insertFootnote}
+                disabled={!footnoteContent.trim()}
+              >
+                Add Footnote
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        <Popover open={showLanguageInput} onOpenChange={setShowLanguageInput}>
+          <PopoverTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8"
+              disabled={!selectedText}
+            >
+              <Languages size={16} />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80">
+            <div className="space-y-4">
+              <h4 className="font-medium mb-2">Set Language</h4>
+              <div className="space-y-2">
+                <Label htmlFor="language-select">Select Language</Label>
+                <Select 
+                  value={selectedLanguage} 
+                  onValueChange={setSelectedLanguage}
+                >
+                  <SelectTrigger id="language-select">
+                    <SelectValue placeholder="Select a language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {commonLanguages.map((lang) => (
+                      <SelectItem key={lang.value} value={lang.value}>
+                        {lang.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button 
+                onClick={applyLanguage}
+                disabled={!selectedLanguage}
+              >
+                Apply Language
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
         
         <Popover open={showLinkInput} onOpenChange={setShowLinkInput}>
           <PopoverTrigger asChild>
@@ -599,9 +797,23 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
         style={{
           fontSize: data.fontSize || 'inherit',
           color: data.textColor || 'inherit',
-          backgroundColor: data.backgroundColor || 'inherit'
+          backgroundColor: data.backgroundColor || 'inherit',
+          textAlign: data.alignment || 'left'
         }}
       />
+      
+      {data.footnotes && data.footnotes.length > 0 && (
+        <div className="mt-4 pt-4 border-t">
+          <h4 className="text-sm font-medium mb-2">Footnotes:</h4>
+          <ol className="list-decimal list-inside text-sm space-y-1 pl-2">
+            {data.footnotes.map((footnote, index) => (
+              <li key={footnote.id} id={footnote.id} className="text-muted-foreground">
+                <a href={`#${footnote.id}-ref`} className="text-primary hover:underline">[{index + 1}]</a> {footnote.content}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
     </div>
   );
 };
