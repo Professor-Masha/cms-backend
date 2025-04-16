@@ -5,12 +5,12 @@ import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import Highlight from '@tiptap/extension-highlight';
-import Superscript from '@tiptap/extension-superscript';
-import Subscript from '@tiptap/extension-subscript';
+import SuperscriptExtension from '@tiptap/extension-superscript';
+import SubscriptExtension from '@tiptap/extension-subscript';
 import TextStyle from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
-import Image from '@tiptap/extension-image';
-import Code from '@tiptap/extension-code';
+import ImageExtension from '@tiptap/extension-image';
+import CodeExtension from '@tiptap/extension-code';
 import { Button } from '@/components/ui/button';
 import { 
   AlignLeft, 
@@ -152,15 +152,15 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
       Highlight.configure({
         multicolor: true,
       }),
-      Superscript,
-      Subscript,
+      SuperscriptExtension,
+      SubscriptExtension,
       TextStyle,
       Color,
-      Image.configure({
+      ImageExtension.configure({
         inline: true,
         allowBase64: true,
       }),
-      Code,
+      CodeExtension,
     ],
     content: data.content || '<p>Start writing...</p>',
     onUpdate: ({ editor }) => {
