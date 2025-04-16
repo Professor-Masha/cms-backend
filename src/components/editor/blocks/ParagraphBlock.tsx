@@ -15,7 +15,9 @@ import {
   Subscript, 
   Strikethrough, 
   Heading1, 
-  Type
+  Type,
+  Image,
+  Keyboard
 } from 'lucide-react';
 import {
   Popover,
@@ -30,6 +32,8 @@ import {
 } from "@/components/ui/tooltip";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 
 interface ParagraphBlockProps {
   data: {
@@ -61,6 +65,13 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
   
   const [linkUrl, setLinkUrl] = useState('');
   const [showLinkInput, setShowLinkInput] = useState(false);
+  const [showHighlightPicker, setShowHighlightPicker] = useState(false);
+  const [textColor, setTextColor] = useState('#000000');
+  const [bgColor, setBgColor] = useState('#ffff00');
+  const [showInlineImageInput, setShowInlineImageInput] = useState(false);
+  const [inlineImageUrl, setInlineImageUrl] = useState('');
+  const [inlineImageWidth, setInlineImageWidth] = useState('100');
+  const [inlineImageAlt, setInlineImageAlt] = useState('');
   
   const handleTextSelect = (e: React.MouseEvent<HTMLTextAreaElement>) => {
     const target = e.target as HTMLTextAreaElement;
@@ -106,6 +117,9 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
       case 'subscript':
         formattedText = `<sub>${formattedText}</sub>`;
         break;
+      case 'kbd':
+        formattedText = `<kbd>${formattedText}</kbd>`;
+        break;
       default:
         break;
     }
@@ -134,9 +148,76 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
     setShowLinkInput(false);
   };
 
+  const applyHighlight = () => {
+    if (!selectedText) return;
+    
+    const formattedText = `<span style="color:${textColor};background-color:${bgColor};">${selectedText.text}</span>`;
+    const newContent = 
+      data.content.substring(0, selectedText.start) + 
+      formattedText + 
+      data.content.substring(selectedText.end);
+    
+    onChange({ ...data, content: newContent });
+    setSelectedText(null);
+    setShowHighlightPicker(false);
+  };
+
+  const insertInlineImage = () => {
+    if (!selectedText && !inlineImageUrl) return;
+    
+    const formattedText = `<img src="${inlineImageUrl}" alt="${inlineImageAlt}" width="${inlineImageWidth}" style="display:inline;vertical-align:middle;" />`;
+    
+    let newContent;
+    if (selectedText) {
+      newContent = 
+        data.content.substring(0, selectedText.start) + 
+        formattedText + 
+        data.content.substring(selectedText.end);
+    } else {
+      // Insert at cursor position or at the end
+      const cursorPos = (document.activeElement as HTMLTextAreaElement)?.selectionStart || data.content.length;
+      newContent = 
+        data.content.substring(0, cursorPos) + 
+        formattedText + 
+        data.content.substring(cursorPos);
+    }
+    
+    onChange({ ...data, content: newContent });
+    setSelectedText(null);
+    setInlineImageUrl('');
+    setInlineImageAlt('');
+    setInlineImageWidth('100');
+    setShowInlineImageInput(false);
+  };
+
+  // Common colors for the highlight feature
+  const commonColors = [
+    { text: '#000000', bg: '#ffff00' }, // Black on Yellow
+    { text: '#ffffff', bg: '#ff0000' }, // White on Red
+    { text: '#ffffff', bg: '#0000ff' }, // White on Blue
+    { text: '#ffffff', bg: '#008000' }, // White on Green
+    { text: '#000000', bg: '#ffffff' }, // Black on White
+    { text: '#ffffff', bg: '#000000' }, // White on Black
+    { text: '#9b87f5', bg: 'transparent' }, // Purple text
+    { text: '#F97316', bg: 'transparent' }, // Orange text
+    { text: '#0EA5E9', bg: 'transparent' }, // Blue text
+    { text: '#fff', bg: '#9b87f5' }, // White on Purple
+    { text: '#fff', bg: '#F97316' }, // White on Orange
+    { text: '#fff', bg: '#0EA5E9' }, // White on Blue
+  ];
+
+  // Placeholder image URLs
+  const placeholderImages = [
+    { url: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b', desc: 'Gray laptop computer' },
+    { url: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6', desc: 'Monitor showing code' },
+    { url: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d', desc: 'Person using MacBook Pro' },
+    { url: 'https://images.unsplash.com/photo-1531297484001-80022131f5a1', desc: 'Gray and black laptop on surface' },
+    { url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f', desc: 'Laptop on glass table' },
+  ];
+
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-1 mb-2">
+      <div className="flex flex-wrap items-center gap-1 mb-2">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -190,6 +271,8 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+        
+        <Separator orientation="vertical" className="h-6 mx-1" />
         
         <TooltipProvider>
           <Tooltip>
@@ -248,24 +331,85 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
           </Tooltip>
         </TooltipProvider>
         
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8"
-                onClick={() => applyTextFormat('highlight')}
-                disabled={!selectedText}
-              >
-                <Highlighter size={16} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Highlight</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Popover open={showHighlightPicker} onOpenChange={setShowHighlightPicker}>
+          <PopoverTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8"
+              disabled={!selectedText}
+            >
+              <Highlighter size={16} />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80">
+            <div className="space-y-4">
+              <h4 className="font-medium mb-2">Highlight (Text Color)</h4>
+              <Tabs defaultValue="text">
+                <TabsList className="w-full mb-4">
+                  <TabsTrigger value="text" className="flex-1">Text Color</TabsTrigger>
+                  <TabsTrigger value="background" className="flex-1">Background</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="text">
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      {commonColors.map((color, index) => (
+                        <div 
+                          key={`text-${index}`} 
+                          className={`w-6 h-6 rounded-full cursor-pointer border ${textColor === color.text ? 'ring-2 ring-primary' : ''}`}
+                          style={{ backgroundColor: color.text }}
+                          onClick={() => setTextColor(color.text)}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="custom-text-color">Custom</Label>
+                      <Input 
+                        id="custom-text-color" 
+                        type="color" 
+                        value={textColor} 
+                        onChange={(e) => setTextColor(e.target.value)}
+                        className="w-8 h-8 p-1"
+                      />
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="background">
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      {commonColors.map((color, index) => (
+                        <div 
+                          key={`bg-${index}`} 
+                          className={`w-6 h-6 rounded-full cursor-pointer border ${bgColor === color.bg ? 'ring-2 ring-primary' : ''}`}
+                          style={{ backgroundColor: color.bg }}
+                          onClick={() => setBgColor(color.bg)}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="custom-bg-color">Custom</Label>
+                      <Input 
+                        id="custom-bg-color" 
+                        type="color" 
+                        value={bgColor} 
+                        onChange={(e) => setBgColor(e.target.value)}
+                        className="w-8 h-8 p-1"
+                      />
+                    </div>
+                    <div className="mt-2 p-2 border rounded">
+                      <p style={{ backgroundColor: bgColor, color: textColor, padding: '8px' }}>
+                        Preview text
+                      </p>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+              <Button onClick={applyHighlight}>Apply Highlight</Button>
+            </div>
+          </PopoverContent>
+        </Popover>
         
         <TooltipProvider>
           <Tooltip>
@@ -324,6 +468,25 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
           </Tooltip>
         </TooltipProvider>
         
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8"
+                onClick={() => applyTextFormat('kbd')}
+                disabled={!selectedText}
+              >
+                <Keyboard size={16} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Keyboard Input</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
         <Popover open={showLinkInput} onOpenChange={setShowLinkInput}>
           <PopoverTrigger asChild>
             <Button 
@@ -347,6 +510,81 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
                 />
               </div>
               <Button onClick={applyLink}>Apply Link</Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        <Popover open={showInlineImageInput} onOpenChange={setShowInlineImageInput}>
+          <PopoverTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8"
+            >
+              <Image size={16} />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80">
+            <div className="space-y-4">
+              <h4 className="font-medium mb-2">Insert Inline Image</h4>
+              
+              <div className="space-y-2">
+                <Label htmlFor="image-url">Image URL</Label>
+                <Input 
+                  id="image-url" 
+                  placeholder="https://example.com/image.jpg" 
+                  value={inlineImageUrl}
+                  onChange={(e) => setInlineImageUrl(e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="image-alt">Alt Text</Label>
+                <Input 
+                  id="image-alt" 
+                  placeholder="Image description" 
+                  value={inlineImageAlt}
+                  onChange={(e) => setInlineImageAlt(e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="image-width">Width (px)</Label>
+                <div className="flex items-center gap-2">
+                  <Input 
+                    id="image-width" 
+                    type="number" 
+                    value={inlineImageWidth}
+                    onChange={(e) => setInlineImageWidth(e.target.value)}
+                    className="w-20"
+                  />
+                  <span className="text-sm text-muted-foreground">px</span>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Sample Images</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {placeholderImages.map((img, index) => (
+                    <div 
+                      key={index} 
+                      className="cursor-pointer border rounded p-1 hover:bg-accent"
+                      onClick={() => {
+                        setInlineImageUrl(img.url);
+                        setInlineImageAlt(img.desc);
+                      }}
+                    >
+                      <img 
+                        src={img.url} 
+                        alt={img.desc} 
+                        className="w-full h-12 object-cover rounded"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <Button onClick={insertInlineImage}>Insert Image</Button>
             </div>
           </PopoverContent>
         </Popover>
