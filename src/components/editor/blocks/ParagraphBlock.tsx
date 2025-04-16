@@ -193,7 +193,11 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
 
   const applyLink = () => {
     if (!linkUrl) return;
-    editor.chain().focus().extendMarkRange('link').setLink({ href: linkUrl }).run();
+    // Use a different approach to set links since setLink is not available
+    editor.chain().focus().extendMarkRange('link')
+      .unsetLink()
+      .createLink({ href: linkUrl })
+      .run();
     setLinkUrl('');
     setShowLinkInput(false);
   };
@@ -206,15 +210,11 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
   const insertInlineImage = () => {
     if (!inlineImageUrl) return;
     
+    // Use the insertContent method instead of setImage
     editor
       .chain()
       .focus()
-      .setImage({ 
-        src: inlineImageUrl,
-        alt: inlineImageAlt,
-        width: `${inlineImageWidth}px`,
-        style: 'display:inline;vertical-align:middle;',
-      })
+      .insertContent(`<img src="${inlineImageUrl}" alt="${inlineImageAlt}" width="${inlineImageWidth}px" style="display:inline;vertical-align:middle;" />`)
       .run();
 
     setInlineImageUrl('');
@@ -250,9 +250,16 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
   const applyLanguage = () => {
     if (!selectedLanguage) return;
     
-    editor.chain().focus().extendMarkRange('textStyle').setAttributes('span', {
-      lang: selectedLanguage
-    }).run();
+    // Use a different approach since setAttributes is not available
+    // First select the text
+    editor.chain().focus().extendMarkRange('textStyle')
+      // Then apply HTML with the lang attribute
+      .insertContent(`<span lang="${selectedLanguage}">${editor.state.doc.textBetween(
+        editor.state.selection.from,
+        editor.state.selection.to,
+        ''
+      )}</span>`)
+      .run();
     
     setSelectedLanguage('');
     setShowLanguageInput(false);
@@ -273,7 +280,8 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
         editor.chain().focus().toggleCode().run();
         break;
       case 'superscript':
-        editor.chain().focus().toggleSuperscript().run();
+        // Use toggleMark instead of toggleSuperscript
+        editor.chain().focus().toggleMark('superscript').run();
         break;
       case 'subscript':
         editor.chain().focus().toggleSubscript().run();
