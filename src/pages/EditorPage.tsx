@@ -285,6 +285,23 @@ const EditorPage = () => {
     
     const getDefaultData = () => {
       switch (blockType) {
+        case 'paragraph':
+          return { 
+            content: 'Start writing here...', 
+            alignment: 'left',
+            format: {
+              bold: false,
+              italic: false,
+              strikethrough: false,
+              highlight: false,
+              code: false,
+              superscript: false,
+              subscript: false
+            },
+            fontSize: 'normal',
+            textColor: '',
+            backgroundColor: ''
+          };
         case 'text':
           return { content: 'Start writing here...' };
         case 'heading':

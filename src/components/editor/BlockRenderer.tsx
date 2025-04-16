@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Block } from '@/types/cms';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,7 @@ import {
 } from "@/components/ui/popover";
 
 import TextBlock from './blocks/TextBlock';
+import ParagraphBlock from './blocks/ParagraphBlock';
 import HeadingBlock from './blocks/HeadingBlock';
 import ImageBlock from './blocks/ImageBlock';
 import ListBlock from './blocks/ListBlock';
@@ -82,6 +84,8 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({
   
   const renderBlockContent = () => {
     switch (block.type) {
+      case 'paragraph':
+        return <ParagraphBlock data={block.data} onChange={onChange} />;
       case 'text':
         return <TextBlock data={block.data} onChange={onChange} />;
       case 'heading':

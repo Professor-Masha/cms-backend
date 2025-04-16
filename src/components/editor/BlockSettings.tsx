@@ -100,6 +100,7 @@ const BlockSettings: React.FC<BlockSettingsProps> = ({ block, onChange }) => {
 
   const renderTypeSpecificSettings = () => {
     switch (block.type) {
+      case 'paragraph':
       case 'text':
         return (
           <div className="space-y-4">
