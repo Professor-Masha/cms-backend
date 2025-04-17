@@ -2,23 +2,33 @@
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
 
 interface GallerySettingsProps {
   columns: 2 | 3 | 4;
   gap: 'small' | 'medium' | 'large';
   caption: string;
+  cropImages?: boolean;
+  imageBorderRadius?: number;
   onColumnsChange: (columns: 2 | 3 | 4) => void;
   onGapChange: (gap: 'small' | 'medium' | 'large') => void;
   onCaptionChange: (caption: string) => void;
+  onCropImagesChange?: (crop: boolean) => void;
+  onImageBorderRadiusChange?: (radius: number) => void;
 }
 
 const GallerySettings: React.FC<GallerySettingsProps> = ({
   columns,
   gap,
   caption,
+  cropImages = false,
+  imageBorderRadius = 0,
   onColumnsChange,
   onGapChange,
-  onCaptionChange
+  onCaptionChange,
+  onCropImagesChange,
+  onImageBorderRadiusChange
 }) => {
   return (
     <div className="space-y-4">
@@ -56,6 +66,30 @@ const GallerySettings: React.FC<GallerySettingsProps> = ({
             </SelectContent>
           </Select>
         </div>
+      </div>
+      
+      <div className="flex items-center space-x-2">
+        <Switch 
+          id="crop-images"
+          checked={cropImages} 
+          onCheckedChange={onCropImagesChange}
+        />
+        <Label htmlFor="crop-images">Crop images to fit</Label>
+      </div>
+
+      <div>
+        <div className="flex justify-between items-center mb-2">
+          <Label htmlFor="image-border-radius">Border Radius</Label>
+          <span className="text-sm text-muted-foreground">{imageBorderRadius}px</span>
+        </div>
+        <Slider
+          id="image-border-radius"
+          value={[imageBorderRadius]} 
+          min={0} 
+          max={24} 
+          step={1}
+          onValueChange={(value) => onImageBorderRadiusChange?.(value[0])}
+        />
       </div>
       
       <div>

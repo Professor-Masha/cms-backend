@@ -1,16 +1,24 @@
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { 
   Dialog,
   DialogContent,
   DialogTitle,
   DialogTrigger
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Media } from '@/types/cms';
 import MediaLibrary from '@/components/media/MediaLibrary';
-import { GalleryHorizontal, X, ArrowUp, ArrowDown, Plus } from 'lucide-react';
-import { Label } from '@/components/ui/label';
+import { X, Plus, Image, Upload, ExternalLink } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 
 interface GalleryImage {
   id: string;
@@ -24,143 +32,225 @@ interface GalleryItemListProps {
   onImagesChange: (images: GalleryImage[]) => void;
 }
 
-const GalleryItemList: React.FC<GalleryItemListProps> = ({ images, onImagesChange }) => {
+const GalleryItemList: React.FC<GalleryItemListProps> = ({ 
+  images, 
+  onImagesChange 
+}) => {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleMediaSelect = (media: Media) => {
-    let updatedImages = [...images];
+    const newImage: GalleryImage = {
+      id: uuidv4(),
+      url: media.url,
+      alt: media.alt_text || '',
+      mediaId: media.id
+    };
     
-    if (currentIndex !== null) {
-      // Update existing image
-      updatedImages[currentIndex] = {
-        id: `img-${Date.now()}-${currentIndex}`,
-        url: media.url,
-        alt: media.alt_text || '',
-        mediaId: media.id
-      };
-    } else {
-      // Add new image
-      updatedImages.push({
-        id: `img-${Date.now()}-${updatedImages.length}`,
-        url: media.url,
-        alt: media.alt_text || '',
-        mediaId: media.id
-      });
-    }
-    
-    onImagesChange(updatedImages);
+    onImagesChange([...images, newImage]);
     setDialogOpen(false);
-    setCurrentIndex(null);
   };
 
-  const removeImage = (index: number) => {
-    const updatedImages = [...images];
-    updatedImages.splice(index, 1);
+  const handleImageAltChange = (id: string, alt: string) => {
+    const updatedImages = images.map(image => 
+      image.id === id ? { ...image, alt } : image
+    );
     onImagesChange(updatedImages);
   };
 
-  const moveImage = (fromIndex: number, toIndex: number) => {
-    if (toIndex < 0 || toIndex >= images.length) return;
-    
-    const updatedImages = [...images];
-    const [movedImage] = updatedImages.splice(fromIndex, 1);
-    updatedImages.splice(toIndex, 0, movedImage);
-    
+  const handleRemoveImage = (id: string) => {
+    const updatedImages = images.filter(image => image.id !== id);
     onImagesChange(updatedImages);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          const newImage: GalleryImage = {
+            id: uuidv4(),
+            url: event.target.result as string,
+            alt: file.name.split('.')[0] || ''
+          };
+          
+          onImagesChange([...images, newImage]);
+        }
+      };
+      
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUrlInput = () => {
+    const url = prompt('Enter image URL:');
+    if (url) {
+      const newImage: GalleryImage = {
+        id: uuidv4(),
+        url,
+        alt: ''
+      };
+      
+      onImagesChange([...images, newImage]);
+    }
   };
 
   return (
-    <div className="border rounded-md p-4">
-      <div className="flex justify-between items-center mb-4">
-        <Label>Images</Label>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setCurrentIndex(null)}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Image
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[640px]">
-            <DialogTitle>Media Library</DialogTitle>
-            <MediaLibrary 
-              onSelect={handleMediaSelect} 
-              onClose={() => setDialogOpen(false)}
-              mediaType="image"
-            />
-          </DialogContent>
-        </Dialog>
-      </div>
+    <div className="space-y-4">
+      <Label>Gallery Images</Label>
       
       {images.length === 0 ? (
         <div className="border-2 border-dashed rounded-md p-6 text-center">
-          <GalleryHorizontal className="mx-auto h-10 w-10 text-muted-foreground" />
-          <p className="mt-2 text-sm text-muted-foreground">
-            No images added. Click "Add Image" to add images to your gallery.
-          </p>
+          <div className="space-y-2">
+            <div className="flex flex-col items-center gap-2">
+              <Image className="h-8 w-8 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                Add images to create a gallery. You can upload images, pick from your media library, or add from URL.
+              </p>
+            </div>
+            <div className="flex justify-center gap-2">
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                className="hidden" 
+                accept="image/*"
+              />
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                Upload
+              </Button>
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    Media Library
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[640px]">
+                  <DialogTitle>Media Library</DialogTitle>
+                  <MediaLibrary 
+                    onSelect={handleMediaSelect} 
+                    onClose={() => setDialogOpen(false)}
+                    mediaType="image"
+                  />
+                </DialogContent>
+              </Dialog>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleUrlInput}
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                From URL
+              </Button>
+            </div>
+          </div>
         </div>
       ) : (
-        <div className="max-h-96 overflow-y-auto">
-          {images.map((image, index) => (
-            <div 
-              key={image.id} 
-              className="flex items-center gap-3 p-2 border rounded-md mb-2"
-            >
-              <img 
-                src={image.url} 
-                alt={image.alt} 
-                className="h-16 w-16 object-cover rounded"
-              />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm truncate">{image.url.split('/').pop()}</p>
-                <p className="text-xs text-muted-foreground truncate">{image.alt}</p>
-              </div>
-              <div className="flex gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setCurrentIndex(index);
-                    setDialogOpen(true);
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {images.map((image) => (
+              <div key={image.id} className="relative group border rounded-md overflow-hidden">
+                <img 
+                  src={image.url} 
+                  alt={image.alt}
+                  className="w-full h-24 object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = 'https://placehold.co/600x400?text=Image+Not+Found';
                   }}
-                  className="h-8 w-8"
-                >
-                  <GalleryHorizontal size={16} />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => moveImage(index, index - 1)}
-                  disabled={index === 0}
-                  className="h-8 w-8"
-                >
-                  <ArrowUp size={16} />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => moveImage(index, index + 1)}
-                  disabled={index === images.length - 1}
-                  className="h-8 w-8"
-                >
-                  <ArrowDown size={16} />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeImage(index)}
-                  className="h-8 w-8 text-destructive hover:text-destructive"
-                >
-                  <X size={16} />
-                </Button>
+                />
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="destructive" 
+                          size="icon" 
+                          className="h-8 w-8" 
+                          onClick={() => handleRemoveImage(image.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Remove image</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <Input 
+                  value={image.alt} 
+                  onChange={(e) => handleImageAltChange(image.id, e.target.value)}
+                  placeholder="Alt text"
+                  className="text-xs mt-1 border-0 bg-muted"
+                />
               </div>
+            ))}
+            
+            <div className="border-2 border-dashed rounded-md flex items-center justify-center p-4 min-h-[7rem]">
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-full w-full">
+                    <Plus className="h-6 w-6 text-muted-foreground" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[640px]">
+                  <DialogTitle>Media Library</DialogTitle>
+                  <MediaLibrary 
+                    onSelect={handleMediaSelect} 
+                    onClose={() => setDialogOpen(false)}
+                    mediaType="image"
+                  />
+                </DialogContent>
+              </Dialog>
             </div>
-          ))}
-        </div>
+          </div>
+          
+          <div className="flex justify-between">
+            <p className="text-sm text-muted-foreground">
+              {images.length} image{images.length !== 1 ? 's' : ''} in gallery
+            </p>
+            
+            <div className="flex gap-2">
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                className="hidden" 
+                accept="image/*"
+              />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                Upload
+              </Button>
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    Media Library
+                  </Button>
+                </DialogTrigger>
+              </Dialog>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleUrlInput}
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                From URL
+              </Button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

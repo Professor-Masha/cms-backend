@@ -1,4 +1,6 @@
 
+import React from 'react';
+
 interface GalleryImage {
   id: string;
   url: string;
@@ -10,13 +12,17 @@ interface GalleryPreviewProps {
   columns: 2 | 3 | 4;
   gap: 'small' | 'medium' | 'large';
   caption?: string;
+  cropImages?: boolean;
+  imageBorderRadius?: number;
 }
 
 const GalleryPreview: React.FC<GalleryPreviewProps> = ({
   images,
   columns,
   gap,
-  caption
+  caption,
+  cropImages = false,
+  imageBorderRadius = 0
 }) => {
   const getGapClass = () => {
     switch (gap) {
@@ -43,12 +49,16 @@ const GalleryPreview: React.FC<GalleryPreviewProps> = ({
       <div className="text-sm text-muted-foreground mb-2">Preview:</div>
       <div className={`grid ${getColumnsClass()} ${getGapClass()}`}>
         {images.map((image) => (
-          <img 
-            key={image.id}
-            src={image.url} 
-            alt={image.alt}
-            className="w-full h-auto rounded-md"
-          />
+          <div key={image.id} className="relative">
+            <img 
+              src={image.url} 
+              alt={image.alt}
+              className={`w-full ${cropImages ? 'h-[160px] object-cover' : 'h-auto'} rounded-md`}
+              style={{ 
+                borderRadius: imageBorderRadius ? `${imageBorderRadius}px` : undefined 
+              }}
+            />
+          </div>
         ))}
       </div>
       {caption && (

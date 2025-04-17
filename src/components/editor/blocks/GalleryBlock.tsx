@@ -17,6 +17,8 @@ interface GalleryBlockProps {
     caption?: string;
     columns?: 2 | 3 | 4;
     gap?: 'small' | 'medium' | 'large';
+    cropImages?: boolean;
+    imageBorderRadius?: number;
   };
   onChange: (data: any) => void;
 }
@@ -27,6 +29,8 @@ const GalleryBlock: React.FC<GalleryBlockProps> = ({ data, onChange }) => {
   const columns = data.columns || 3;
   const gap = data.gap || 'medium';
   const caption = data.caption || '';
+  const cropImages = data.cropImages || false;
+  const imageBorderRadius = data.imageBorderRadius || 0;
 
   const handleImagesChange = (newImages: GalleryImage[]) => {
     onChange({
@@ -48,9 +52,13 @@ const GalleryBlock: React.FC<GalleryBlockProps> = ({ data, onChange }) => {
         columns={columns}
         gap={gap}
         caption={caption}
+        cropImages={cropImages}
+        imageBorderRadius={imageBorderRadius}
         onColumnsChange={(value) => handleSettingChange('columns', value)}
         onGapChange={(value) => handleSettingChange('gap', value)}
         onCaptionChange={(value) => handleSettingChange('caption', value)}
+        onCropImagesChange={(value) => handleSettingChange('cropImages', value)}
+        onImageBorderRadiusChange={(value) => handleSettingChange('imageBorderRadius', value)}
       />
       
       <GalleryItemList 
@@ -64,6 +72,8 @@ const GalleryBlock: React.FC<GalleryBlockProps> = ({ data, onChange }) => {
           columns={columns}
           gap={gap}
           caption={caption}
+          cropImages={cropImages}
+          imageBorderRadius={imageBorderRadius}
         />
       </div>
     </div>
