@@ -27,8 +27,12 @@ import {
   Link,
   Columns,
   Rows,
-  PanelLeft
+  PanelLeft,
+  Square,
 } from 'lucide-react';
+
+// Using Square icon from lucide-react as a ButtonIcon replacement
+const ButtonIcon = ({ size }: { size: number }) => <Square size={size} />;
 
 interface BlockSelectorProps {
   onSelectBlock: (blockType: BlockType) => void;
