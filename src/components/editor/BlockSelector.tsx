@@ -29,6 +29,9 @@ import {
   Rows,
   PanelLeft,
   Square,
+  LayoutGrid,
+  SplitSquareHorizontal,
+  SplitSquareVertical,
 } from 'lucide-react';
 
 // Using Square icon from lucide-react as a ButtonIcon replacement
@@ -37,9 +40,14 @@ const ButtonIcon = ({ size }: { size: number }) => <Square size={size} />;
 interface BlockSelectorProps {
   onSelectBlock: (blockType: BlockType) => void;
   searchTerm?: string;
+  showColumnVariants?: boolean;
 }
 
-const BlockSelector: React.FC<BlockSelectorProps> = ({ onSelectBlock, searchTerm = '' }) => {
+const BlockSelector: React.FC<BlockSelectorProps> = ({ 
+  onSelectBlock, 
+  searchTerm = '',
+  showColumnVariants = false
+}) => {
   const [activeTab, setActiveTab] = useState('core');
 
   const coreBlocks: Array<{ type: BlockType; name: string; description: string; icon: React.ReactNode }> = [
@@ -79,6 +87,15 @@ const BlockSelector: React.FC<BlockSelectorProps> = ({ onSelectBlock, searchTerm
     { type: 'calendar', name: 'Calendar', description: 'Event calendar', icon: <Calendar size={18} /> },
     { type: 'search', name: 'Search', description: 'Search form', icon: <Menu size={18} /> },
     { type: 'recentPosts', name: 'Recent Posts', description: 'Display recent posts', icon: <List size={18} /> },
+  ];
+  
+  const columnVariants = [
+    { id: 'col-100', name: '100', layout: [100], icon: <div className="w-full h-6 border-2 border-primary rounded flex items-center justify-center"><div className="w-4/5 h-3 bg-primary/30 rounded"></div></div> },
+    { id: 'col-50-50', name: '50/50', layout: [50, 50], icon: <div className="w-full h-6 border-2 border-primary rounded flex"><div className="w-1/2 h-full bg-primary/30 border-r border-primary"></div><div className="w-1/2 h-full bg-primary/30"></div></div> },
+    { id: 'col-33-66', name: '33/66', layout: [33, 66], icon: <div className="w-full h-6 border-2 border-primary rounded flex"><div className="w-1/3 h-full bg-primary/30 border-r border-primary"></div><div className="w-2/3 h-full bg-primary/30"></div></div> },
+    { id: 'col-66-33', name: '66/33', layout: [66, 33], icon: <div className="w-full h-6 border-2 border-primary rounded flex"><div className="w-2/3 h-full bg-primary/30 border-r border-primary"></div><div className="w-1/3 h-full bg-primary/30"></div></div> },
+    { id: 'col-33-33-33', name: '33/33/33', layout: [33, 33, 33], icon: <div className="w-full h-6 border-2 border-primary rounded flex"><div className="w-1/3 h-full bg-primary/30 border-r border-primary"></div><div className="w-1/3 h-full bg-primary/30 border-r border-primary"></div><div className="w-1/3 h-full bg-primary/30"></div></div> },
+    { id: 'col-25-50-25', name: '25/50/25', layout: [25, 50, 25], icon: <div className="w-full h-6 border-2 border-primary rounded flex"><div className="w-1/4 h-full bg-primary/30 border-r border-primary"></div><div className="w-1/2 h-full bg-primary/30 border-r border-primary"></div><div className="w-1/4 h-full bg-primary/30"></div></div> },
   ];
 
   const allBlocks = [...coreBlocks, ...mediaBlocks, ...layoutBlocks, ...advancedBlocks];
@@ -129,6 +146,37 @@ const BlockSelector: React.FC<BlockSelectorProps> = ({ onSelectBlock, searchTerm
       </button>
     ));
   };
+
+  // If showing column variants, render the column layout options
+  if (showColumnVariants) {
+    return (
+      <div className="p-4">
+        <h3 className="font-medium mb-2">Select a variation to start with:</h3>
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          {columnVariants.map((variant) => (
+            <div key={variant.id} className="flex flex-col items-center">
+              <button 
+                className="p-2 hover:bg-muted rounded-md border-2 border-muted hover:border-primary mb-1"
+                onClick={() => onSelectBlock({ 
+                  type: 'columns', 
+                  variant: variant.id, 
+                  layout: variant.layout 
+                } as any)}
+              >
+                {variant.icon}
+              </button>
+              <span className="text-xs text-center">{variant.name}</span>
+            </div>
+          ))}
+        </div>
+        <div className="text-right">
+          <Button variant="ghost" size="sm" onClick={() => onSelectBlock({ type: 'columns', skip: true } as any)}>
+            Skip
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // If searching, show all matched blocks in one list
   if (searchTerm) {
@@ -183,4 +231,3 @@ const BlockSelector: React.FC<BlockSelectorProps> = ({ onSelectBlock, searchTerm
 };
 
 export default BlockSelector;
-

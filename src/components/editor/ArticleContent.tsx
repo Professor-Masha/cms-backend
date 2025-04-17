@@ -10,10 +10,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/use-toast';
 
 interface ArticleContentProps {
   blocks: Block[];
-  onAddBlock: (blockType: BlockType) => void;
+  onAddBlock: (blockType: BlockType | any) => void;
   onUpdateBlock: (index: number, data: any) => void;
   onReorderBlocks: (result: DropResult) => void;
   onRemoveBlock: (index: number) => void;
@@ -28,14 +29,26 @@ const ArticleContent: React.FC<ArticleContentProps> = ({
 }) => {
   const [showBlockMenu, setShowBlockMenu] = useState(false);
   const [blockSearchTerm, setBlockSearchTerm] = useState('');
+  const { toast } = useToast();
   
   // Add debugging to track when blocks are created/rendered
   useEffect(() => {
     console.log('Current blocks:', blocks);
   }, [blocks]);
 
-  // Enhanced handler for drag end event with support for duplication
-  const handleDragEnd = (result: DropResult) => {
+  // Enhanced handler for drag end event with support for custom operations
+  const handleDragEnd = (result: any) => {
+    // Handle case when we have customBlocks (direct manipulation)
+    if ('customBlocks' in result) {
+      // The parent component will handle the full block replacement
+      onReorderBlocks({
+        ...result,
+        customBlocks: result.customBlocks,
+      });
+      return;
+    }
+    
+    // No destination (dropped outside droppable area)
     if (!result.destination) return;
     
     // Handle block duplication
@@ -76,9 +89,41 @@ const ArticleContent: React.FC<ArticleContentProps> = ({
   };
 
   // Function to handle block type creation
-  const handleAddBlock = (blockType: BlockType) => {
-    console.log('Adding block of type:', blockType);
-    onAddBlock(blockType);
+  const handleAddBlock = (blockTypeData: BlockType | any, afterIndex = -1) => {
+    // Handle the column block with variants case
+    if (typeof blockTypeData === 'object' && blockTypeData.type === 'columns' && blockTypeData.variant) {
+      const layout = blockTypeData.layout || [50, 50];
+      
+      // Create columns from the selected variant
+      const columns = layout.map((width: number) => ({
+        id: `col-${uuidv4()}`,
+        width,
+        blocks: [] as Block[]
+      }));
+      
+      // Create a block data structure for columns
+      const columnData = {
+        columns,
+        gapSize: 'medium',
+        stackOnMobile: true
+      };
+      
+      // Add the block
+      const blockType = 'columns' as BlockType;
+      const blockWithData = { type: blockType, data: columnData };
+      
+      console.log('Adding column block with layout:', layout);
+      onAddBlock(blockWithData);
+      return;
+    }
+    
+    // Handle regular block types
+    console.log('Adding block of type:', blockTypeData);
+    if (afterIndex >= 0) {
+      onAddBlock({ type: blockTypeData, afterIndex });
+    } else {
+      onAddBlock(blockTypeData);
+    }
     setShowBlockMenu(false);
   };
   
@@ -139,7 +184,7 @@ const ArticleContent: React.FC<ArticleContentProps> = ({
                   onUpdateBlock={onUpdateBlock}
                   onRemoveBlock={onRemoveBlock}
                   onReorderBlocks={handleDragEnd}
-                  onAddBlock={onAddBlock}
+                  onAddBlock={handleAddBlock}
                 />
                 
                 <div className="mt-8 flex justify-center">

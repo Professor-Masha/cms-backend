@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Block } from '@/types/cms';
 import { Button } from '@/components/ui/button';
@@ -15,7 +14,10 @@ import {
   AlignRight,
   AlignJustify,
   Group,
-  Plus
+  Plus,
+  LayoutGrid,
+  Columns,
+  SplitSquareHorizontal,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -28,6 +30,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import TextBlock from './blocks/TextBlock';
 import ParagraphBlock from './blocks/ParagraphBlock';
@@ -51,6 +59,7 @@ import TableBlock from './blocks/TableBlock';
 import BlockSettings from './BlockSettings';
 import GroupBlock from './blocks/GroupBlock';
 import BlockSelector from './BlockSelector';
+import ColumnsBlock from './blocks/ColumnsBlock';
 
 interface BlockRendererProps {
   block: Block;
@@ -62,9 +71,11 @@ interface BlockRendererProps {
   onDuplicate?: () => void;
   onGroup?: () => void;
   onAddBlock?: (blockType: string, afterIndex: number) => void;
+  onTransformBlocks?: (type: string, config?: any) => void;
   canMoveUp: boolean;
   canMoveDown: boolean;
   isSelected: boolean;
+  isMultiSelected?: boolean;
   onSelect: () => void;
   dragHandleProps?: any;
 }
@@ -79,14 +90,17 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({
   onDuplicate,
   onGroup,
   onAddBlock,
+  onTransformBlocks,
   canMoveUp,
   canMoveDown,
   isSelected,
+  isMultiSelected = false,
   onSelect,
   dragHandleProps
 }) => {
   const [showSettings, setShowSettings] = useState(false);
   const [showBlockMenu, setShowBlockMenu] = useState(false);
+  const [showColumnSelector, setShowColumnSelector] = useState(false);
   
   const renderBlockContent = () => {
     switch (block.type) {
@@ -131,6 +145,7 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({
       case 'group':
         return <GroupBlock data={block.data} onChange={onChange} />;
       case 'columns':
+        return <ColumnsBlock data={block.data} onChange={onChange} />;
       case 'row':
       case 'stack':
         return (
@@ -236,9 +251,24 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({
     }
   };
 
+  const handleColumnsSelectorClick = (data: any) => {
+    if (data.skip) {
+      setShowColumnSelector(false);
+      return;
+    }
+    
+    if (onTransformBlocks && data.variant) {
+      const config = {
+        layout: data.layout,
+        variant: data.variant
+      };
+      onTransformBlocks('columns', config);
+      setShowColumnSelector(false);
+    }
+  };
+
   return (
     <div className="group relative">
-      {/* Add Block Button (visible on hover) */}
       <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
         <Popover open={showBlockMenu} onOpenChange={setShowBlockMenu}>
           <PopoverTrigger asChild>
@@ -257,11 +287,16 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({
       </div>
     
       <Card 
-        className={`transition-all border-2 ${isSelected ? 'border-primary' : 'border-transparent hover:border-gray-200'}`}
-        onClick={onSelect}
+        className={`transition-all border-2 ${isMultiSelected ? 'border-blue-500' : isSelected ? 'border-primary' : 'border-transparent hover:border-gray-200'}`}
+        onClick={(e) => {
+          if (e.shiftKey) {
+            onSelect();
+          } else if (!isMultiSelected) {
+            onSelect();
+          }
+        }}
       >
         <div className="flex">
-          {/* Left toolbar - visible on hover or selection */}
           <div 
             className={`w-10 flex-shrink-0 flex flex-col items-center py-3 transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
           >
@@ -270,15 +305,49 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({
             </div>
           </div>
           
-          {/* Block content */}
           <div className="flex-grow py-3 pr-3">
             {renderBlockContent()}
           </div>
         </div>
       </Card>
       
-      {/* Block toolbar - appears when block is selected */}
-      {isSelected && (
+      {isMultiSelected && onTransformBlocks && (
+        <div className="absolute -left-10 top-2 flex flex-col gap-1">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="icon"
+                className="h-8 w-8 bg-white"
+              >
+                <SplitSquareHorizontal size={16} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="left">
+              <h3 className="px-2 py-1 text-xs font-bold text-muted-foreground">TRANSFORM TO</h3>
+              <DropdownMenuItem onClick={() => setShowColumnSelector(true)}>
+                <Columns className="mr-2 h-4 w-4" />
+                <span>Columns</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onTransformBlocks('group')}>
+                <Group className="mr-2 h-4 w-4" />
+                <span>Group</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
+      
+      <Popover open={showColumnSelector} onOpenChange={setShowColumnSelector}>
+        <PopoverContent className="w-80 p-0" side="left">
+          <BlockSelector 
+            onSelectBlock={handleColumnsSelectorClick} 
+            showColumnVariants={true}
+          />
+        </PopoverContent>
+      </Popover>
+      
+      {isSelected && !isMultiSelected && (
         <div className="absolute -right-10 top-2 flex flex-col gap-1">
           <TooltipProvider>
             <Tooltip>

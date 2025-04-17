@@ -5,6 +5,7 @@ import { useToast } from '@/components/ui/use-toast';
 import EditorLayout from '@/components/editor/EditorLayout';
 import { Article, Block, ArticleStatus, Category, Tag, BlockType } from '@/types/cms';
 import { DropResult } from 'react-beautiful-dnd';
+import { v4 as uuidv4 } from 'uuid';
 
 type HistoryState = {
   past: { article: Article; blocks: Block[] }[];
@@ -280,8 +281,58 @@ const EditorPage = () => {
     }));
   };
   
-  const addBlock = (blockType: BlockType, afterIndex: number = -1) => {
+  const addBlock = (blockTypeData: BlockType | any, afterIndex: number = -1) => {
     saveToHistory();
+    
+    if (typeof blockTypeData === 'object' && 'type' in blockTypeData && 'data' in blockTypeData) {
+      const { type, data } = blockTypeData;
+      
+      const newBlock: Block = {
+        id: `temp-${Date.now()}`,
+        article_id: article.id || 'temp',
+        type: type as BlockType,
+        order: afterIndex >= 0 ? afterIndex + 1 : blocks.length,
+        data,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      
+      if (afterIndex >= 0) {
+        const updatedBlocks = [...blocks];
+        updatedBlocks.splice(afterIndex + 1, 0, newBlock);
+        
+        const reindexedBlocks = updatedBlocks.map((block, idx) => ({
+          ...block,
+          order: idx,
+        }));
+        
+        dispatch({
+          type: 'SAVE_STATE',
+          payload: { 
+            article, 
+            blocks: reindexedBlocks
+          }
+        });
+      } else {
+        dispatch({
+          type: 'SAVE_STATE',
+          payload: { 
+            article, 
+            blocks: [...blocks, newBlock]
+          }
+        });
+      }
+      
+      return;
+    }
+    
+    if (typeof blockTypeData === 'object' && 'type' in blockTypeData && 'afterIndex' in blockTypeData) {
+      const { type, afterIndex: specifiedIndex } = blockTypeData;
+      addBlock(type, specifiedIndex);
+      return;
+    }
+    
+    const blockType = blockTypeData as BlockType;
     
     const getDefaultData = () => {
       switch (blockType) {
@@ -386,10 +437,11 @@ const EditorPage = () => {
         case 'columns':
           return {
             columns: [
-              { id: `col-${Date.now()}-1`, width: 50, blocks: [] },
-              { id: `col-${Date.now()}-2`, width: 50, blocks: [] }
+              { id: `col-${uuidv4()}`, width: 50, blocks: [] },
+              { id: `col-${uuidv4()}`, width: 50, blocks: [] }
             ],
-            gapSize: 'medium'
+            gapSize: 'medium',
+            stackOnMobile: true
           };
         
         case 'group':
@@ -420,7 +472,7 @@ const EditorPage = () => {
     };
     
     const newBlock: Block = {
-      id: `temp-${Date.now()}`,
+      id: `temp-${uuidv4()}`,
       article_id: article.id || 'temp',
       type: blockType,
       order: afterIndex >= 0 ? afterIndex + 1 : blocks.length,
@@ -557,7 +609,16 @@ const EditorPage = () => {
     });
   };
   
-  const handleReorderBlocks = (result: DropResult) => {
+  const handleReorderBlocks = (result: any) => {
+    if ('customBlocks' in result) {
+      saveToHistory();
+      dispatch({
+        type: 'SAVE_STATE',
+        payload: { article, blocks: result.customBlocks }
+      });
+      return;
+    }
+    
     if (!result.destination) return;
     
     saveToHistory();
