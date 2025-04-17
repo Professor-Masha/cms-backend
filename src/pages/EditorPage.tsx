@@ -287,7 +287,7 @@ const EditorPage = () => {
       switch (blockType) {
         case 'paragraph':
           return { 
-            content: 'Start writing here...', 
+            content: '', 
             alignment: 'left',
             format: {
               bold: false,
@@ -303,9 +303,9 @@ const EditorPage = () => {
             backgroundColor: ''
           };
         case 'text':
-          return { content: 'Start writing here...' };
+          return { content: '', alignment: 'left' };
         case 'heading':
-          return { content: 'Heading', level: 'h2' };
+          return { content: 'Heading', level: 'h2', alignment: 'left' };
         case 'image':
           return { url: '', alt: '', caption: '' };
         case 'gallery':

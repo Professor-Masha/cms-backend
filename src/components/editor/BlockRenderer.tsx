@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Block } from '@/types/cms';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { 
   Trash2, 
   GripVertical, 
@@ -14,7 +14,8 @@ import {
   AlignCenter,
   AlignRight,
   AlignJustify,
-  Group
+  Group,
+  Plus
 } from 'lucide-react';
 import {
   Tooltip,
@@ -49,6 +50,7 @@ import HtmlBlock from './blocks/HtmlBlock';
 import TableBlock from './blocks/TableBlock';
 import BlockSettings from './BlockSettings';
 import GroupBlock from './blocks/GroupBlock';
+import BlockSelector from './BlockSelector';
 
 interface BlockRendererProps {
   block: Block;
@@ -59,6 +61,7 @@ interface BlockRendererProps {
   onMoveDown: () => void;
   onDuplicate?: () => void;
   onGroup?: () => void;
+  onAddBlock?: (blockType: string, afterIndex: number) => void;
   canMoveUp: boolean;
   canMoveDown: boolean;
   isSelected: boolean;
@@ -75,6 +78,7 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({
   onMoveDown,
   onDuplicate,
   onGroup,
+  onAddBlock,
   canMoveUp,
   canMoveDown,
   isSelected,
@@ -82,6 +86,7 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({
   dragHandleProps
 }) => {
   const [showSettings, setShowSettings] = useState(false);
+  const [showBlockMenu, setShowBlockMenu] = useState(false);
   
   const renderBlockContent = () => {
     switch (block.type) {
@@ -142,207 +147,235 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({
     }
   };
 
-  const renderBlockToolbar = () => {
-    const commonTools = (
+  const renderAlignmentTools = () => {
+    if (block.type !== 'text' && block.type !== 'heading' && block.type !== 'paragraph') {
+      return null;
+    }
+    
+    return (
       <>
-        {block.type === 'text' || block.type === 'heading' || block.type === 'paragraph' ? (
-          <>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onChange({...block.data, alignment: 'left'})}>
-                    <AlignLeft size={16} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Align Left</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onChange({...block.data, alignment: 'center'})}>
-                    <AlignCenter size={16} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Align Center</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onChange({...block.data, alignment: 'right'})}>
-                    <AlignRight size={16} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Align Right</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onChange({...block.data, alignment: 'justify'})}>
-                    <AlignJustify size={16} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Justify</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </>
-        ) : null}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8"
+                onClick={() => onChange({...block.data, alignment: 'left'})}
+              >
+                <AlignLeft size={16} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Align Left</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8"
+                onClick={() => onChange({...block.data, alignment: 'center'})}
+              >
+                <AlignCenter size={16} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Align Center</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8"
+                onClick={() => onChange({...block.data, alignment: 'right'})}
+              >
+                <AlignRight size={16} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Align Right</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8"
+                onClick={() => onChange({...block.data, alignment: 'justify'})}
+              >
+                <AlignJustify size={16} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Justify</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </>
     );
-    
-    return commonTools;
+  };
+
+  const handleInsertBlock = (blockType: any) => {
+    if (onAddBlock) {
+      onAddBlock(blockType, index);
+      setShowBlockMenu(false);
+    }
   };
 
   return (
-    <Card 
-      className={`transition-all ${isSelected ? 'ring-2 ring-primary' : ''}`}
-      onClick={onSelect}
-    >
-      <div className="bg-muted p-2 rounded-t-md flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div {...dragHandleProps}>
-            <GripVertical className="text-muted-foreground cursor-grab" size={16} />
-          </div>
-          <span className="text-sm font-medium capitalize">{block.type} Block</span>
-        </div>
-        
-        {isSelected && (
-          <div className="flex items-center gap-1">
-            {renderBlockToolbar()}
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    onClick={onMoveUp}
-                    disabled={!canMoveUp}
-                    className="h-8 w-8"
-                  >
-                    <ChevronUp size={16} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Move Up</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    onClick={onMoveDown}
-                    disabled={!canMoveDown}
-                    className="h-8 w-8"
-                  >
-                    <ChevronDown size={16} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Move Down</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            {onDuplicate && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={onDuplicate}
-                      className="h-8 w-8"
-                    >
-                      <Copy size={16} />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Duplicate</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-            
-            {onGroup && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={onGroup}
-                      className="h-8 w-8"
-                    >
-                      <Group size={16} />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Group</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-            
-            <Popover open={showSettings} onOpenChange={setShowSettings}>
-              <PopoverTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  className="h-8 w-8"
-                >
-                  <Settings size={16} />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 p-4" align="end">
-                <BlockSettings 
-                  block={block} 
-                  onChange={onChange} 
-                />
-              </PopoverContent>
-            </Popover>
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    onClick={onDelete}
-                    className="h-8 w-8 text-destructive"
-                  >
-                    <Trash2 size={16} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Delete</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        )}
+    <div className="group relative">
+      {/* Add Block Button (visible on hover) */}
+      <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <Popover open={showBlockMenu} onOpenChange={setShowBlockMenu}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 rounded-full shadow-md bg-white hover:bg-gray-100"
+            >
+              <Plus size={14} />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-2" align="center">
+            <BlockSelector onSelectBlock={handleInsertBlock} />
+          </PopoverContent>
+        </Popover>
       </div>
-      <CardContent className="pt-4">
-        {renderBlockContent()}
-      </CardContent>
-    </Card>
+    
+      <Card 
+        className={`transition-all border-2 ${isSelected ? 'border-primary' : 'border-transparent hover:border-gray-200'}`}
+        onClick={onSelect}
+      >
+        <div className="flex">
+          {/* Left toolbar - visible on hover or selection */}
+          <div 
+            className={`w-10 flex-shrink-0 flex flex-col items-center py-3 transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+          >
+            <div {...dragHandleProps} className="cursor-grab p-1">
+              <GripVertical className="text-muted-foreground" size={16} />
+            </div>
+          </div>
+          
+          {/* Block content */}
+          <div className="flex-grow py-3 pr-3">
+            {renderBlockContent()}
+          </div>
+        </div>
+      </Card>
+      
+      {/* Block toolbar - appears when block is selected */}
+      {isSelected && (
+        <div className="absolute -right-10 top-2 flex flex-col gap-1">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={onMoveUp}
+                  disabled={!canMoveUp}
+                  className="h-8 w-8 bg-white"
+                >
+                  <ChevronUp size={16} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Move Up</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={onMoveDown}
+                  disabled={!canMoveDown}
+                  className="h-8 w-8 bg-white"
+                >
+                  <ChevronDown size={16} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Move Down</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          {onDuplicate && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={onDuplicate}
+                    className="h-8 w-8 bg-white"
+                  >
+                    <Copy size={16} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Duplicate</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          
+          <Popover open={showSettings} onOpenChange={setShowSettings}>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="icon"
+                className="h-8 w-8 bg-white"
+              >
+                <Settings size={16} />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-4" align="end">
+              <BlockSettings 
+                block={block} 
+                onChange={onChange} 
+              />
+            </PopoverContent>
+          </Popover>
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={onDelete}
+                  className="h-8 w-8 bg-white text-destructive hover:bg-destructive hover:text-white"
+                >
+                  <Trash2 size={16} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Delete</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      )}
+    </div>
   );
 };
 

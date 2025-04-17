@@ -1,16 +1,15 @@
 
 import React, { useState } from 'react';
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
-import BlockRenderer from './BlockRenderer';
+import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 import { Block, BlockType } from '@/types/cms';
-import { v4 as uuidv4 } from 'uuid';
+import BlockRenderer from './BlockRenderer';
 
 interface DraggableBlockListProps {
   blocks: Block[];
   onUpdateBlock: (index: number, data: any) => void;
   onRemoveBlock: (index: number) => void;
-  onReorderBlocks: (result: DropResult) => void;
-  onAddBlock?: (blockType: BlockType) => void;
+  onReorderBlocks: (result: any) => void;
+  onAddBlock: (blockType: BlockType, afterIndex?: number) => void;
 }
 
 const DraggableBlockList: React.FC<DraggableBlockListProps> = ({
@@ -18,112 +17,78 @@ const DraggableBlockList: React.FC<DraggableBlockListProps> = ({
   onUpdateBlock,
   onRemoveBlock,
   onReorderBlocks,
-  onAddBlock
+  onAddBlock,
 }) => {
   const [selectedBlockIndex, setSelectedBlockIndex] = useState<number | null>(null);
-
-  const handleMoveUp = (index: number) => {
-    if (index > 0) {
-      const result: DropResult = {
-        source: { index, droppableId: 'blocks' },
-        destination: { index: index - 1, droppableId: 'blocks' },
-        draggableId: blocks[index].id,
-        type: 'DEFAULT',
-        reason: 'DROP',
-        mode: 'FLUID',
-        combine: null
-      };
-      
-      onReorderBlocks(result);
-    }
-  };
-
-  const handleMoveDown = (index: number) => {
-    if (index < blocks.length - 1) {
-      const result: DropResult = {
-        source: { index, droppableId: 'blocks' },
-        destination: { index: index + 1, droppableId: 'blocks' },
-        draggableId: blocks[index].id,
-        type: 'DEFAULT',
-        reason: 'DROP',
-        mode: 'FLUID',
-        combine: null
-      };
-      
-      onReorderBlocks(result);
-    }
-  };
-
-  const handleDuplicateBlock = (index: number) => {
-    if (!onAddBlock) return;
-    
-    const blockToDuplicate = blocks[index];
-    const duplicatedData = JSON.parse(JSON.stringify(blockToDuplicate.data));
-    
-    // Create a new block with the same type and data
-    const newBlock: Block = {
-      id: uuidv4(),
-      article_id: blockToDuplicate.article_id,
-      type: blockToDuplicate.type,
-      order: index + 1,
-      data: duplicatedData,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    
-    // Insert the duplicated block right after the original one
-    const customResult = {
-      source: { index: -1, droppableId: 'blocks' },
-      destination: { index: index + 1, droppableId: 'blocks' },
-      draggableId: newBlock.id,
-      type: 'DEFAULT',
-      reason: 'DROP',
-      mode: 'FLUID',
-      combine: null,
-      duplicatedBlock: newBlock
-    } as unknown as DropResult;
-    
-    onReorderBlocks(customResult);
-  };
-
-  const handleGroupBlocks = () => {
-    // This will be implemented in a future update
-    console.log("Group blocks feature coming soon");
-  };
 
   return (
     <DragDropContext onDragEnd={onReorderBlocks}>
       <Droppable droppableId="blocks">
         {(provided) => (
           <div
-            ref={provided.innerRef}
             {...provided.droppableProps}
+            ref={provided.innerRef}
             className="space-y-4"
-            onClick={() => setSelectedBlockIndex(null)}
           >
             {blocks.map((block, index) => (
-              <Draggable key={block.id} draggableId={block.id} index={index}>
-                {(dragProvided, snapshot) => (
+              <Draggable
+                key={block.id}
+                draggableId={block.id}
+                index={index}
+              >
+                {(provided) => (
                   <div
-                    ref={dragProvided.innerRef}
-                    {...dragProvided.draggableProps}
-                    className={`transition-shadow ${snapshot.isDragging ? 'shadow-lg' : ''}`}
-                    onClick={(e) => e.stopPropagation()}
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    className="mb-4"
                   >
                     <BlockRenderer
                       block={block}
                       index={index}
                       onChange={(data) => onUpdateBlock(index, data)}
                       onDelete={() => onRemoveBlock(index)}
-                      onMoveUp={() => handleMoveUp(index)}
-                      onMoveDown={() => handleMoveDown(index)}
-                      onDuplicate={() => handleDuplicateBlock(index)}
-                      onGroup={handleGroupBlocks}
+                      onMoveUp={() => {
+                        if (index > 0) {
+                          const result = {
+                            source: { index },
+                            destination: { index: index - 1 },
+                          };
+                          onReorderBlocks(result);
+                          setSelectedBlockIndex(index - 1);
+                        }
+                      }}
+                      onMoveDown={() => {
+                        if (index < blocks.length - 1) {
+                          const result = {
+                            source: { index },
+                            destination: { index: index + 1 },
+                          };
+                          onReorderBlocks(result);
+                          setSelectedBlockIndex(index + 1);
+                        }
+                      }}
+                      onDuplicate={() => {
+                        const duplicatedData = JSON.parse(JSON.stringify(block.data));
+                        const duplicatedBlock = {
+                          ...block,
+                          id: `temp-${Date.now()}`,
+                          data: duplicatedData,
+                        };
+                        onReorderBlocks({
+                          source: { index: -1 },
+                          destination: { index: index + 1 },
+                          duplicatedBlock,
+                        });
+                        setSelectedBlockIndex(index + 1);
+                      }}
+                      onAddBlock={(blockType, afterIndex) => onAddBlock(blockType as BlockType, afterIndex)}
                       canMoveUp={index > 0}
                       canMoveDown={index < blocks.length - 1}
                       isSelected={selectedBlockIndex === index}
                       onSelect={() => setSelectedBlockIndex(index)}
-                      dragHandleProps={dragProvided.dragHandleProps}
+                      dragHandleProps={{
+                        ...provided.dragHandleProps,
+                      }}
                     />
                   </div>
                 )}
