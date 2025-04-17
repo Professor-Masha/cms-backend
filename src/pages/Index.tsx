@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,6 @@ const Index = () => {
       setUser(session?.user ?? null);
       setLoading(false);
       
-      // Set up auth state listener
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         (event, session) => {
           setUser(session?.user ?? null);
@@ -130,7 +128,7 @@ const Index = () => {
                       <p className="text-sm text-muted-foreground">Browse and manage all your articles.</p>
                     </CardContent>
                     <CardFooter className="p-4 pt-0">
-                      <Button variant="outline">
+                      <Button variant="outline" onClick={() => navigate('/articles')}>
                         View All Articles
                       </Button>
                     </CardFooter>
