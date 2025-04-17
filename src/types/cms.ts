@@ -1,4 +1,3 @@
-
 export type BlockType = 
   // Core blocks
   | 'text'
@@ -38,7 +37,7 @@ export type BlockType =
   | 'html'
   | 'table';
 
-export type ArticleStatus = 'draft' | 'published' | 'archived';
+export type ArticleStatus = 'draft' | 'published' | 'archived' | 'scheduled';
 
 export interface Article {
   id: string;
