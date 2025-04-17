@@ -13,7 +13,6 @@ import {
   Image, 
   List, 
   Quote, 
-  Button as ButtonIcon, 
   Heading, 
   Code, 
   Table, 
@@ -180,3 +179,4 @@ const BlockSelector: React.FC<BlockSelectorProps> = ({ onSelectBlock, searchTerm
 };
 
 export default BlockSelector;
+
