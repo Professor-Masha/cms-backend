@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -7,11 +8,11 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Block } from '@/types/cms';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { 
-  AlignTop, 
-  AlignMiddle, 
-  AlignBottom,
+  AlignVerticalSpaceAround as AlignTop, 
+  AlignVerticalJustifyCenter as AlignMiddle, 
+  AlignVerticalSpaceAround as AlignBottom,
   AlignLeft,
   AlignRight,
   AlignCenter,
