@@ -190,7 +190,6 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
 
   const applyLink = () => {
     if (!linkUrl) return;
-    // Use a different approach to set links since setLink is not available
     editor.chain().focus().extendMarkRange('link')
       .unsetLink()
       .setLink({ href: linkUrl })
@@ -207,7 +206,6 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
   const insertInlineImage = () => {
     if (!inlineImageUrl) return;
     
-    // Use the insertContent method instead of setImage
     editor
       .chain()
       .focus()
@@ -247,10 +245,7 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
   const applyLanguage = () => {
     if (!selectedLanguage) return;
     
-    // Use a different approach since setAttributes is not available
-    // First select the text
     editor.chain().focus().extendMarkRange('textStyle')
-      // Then apply HTML with the lang attribute
       .insertContent(`<span lang="${selectedLanguage}">${editor.state.doc.textBetween(
         editor.state.selection.from,
         editor.state.selection.to,
@@ -277,14 +272,12 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
         editor.chain().focus().toggleCode().run();
         break;
       case 'superscript':
-        // Use toggleMark instead of toggleSuperscript
         editor.chain().focus().toggleMark('superscript').run();
         break;
       case 'subscript':
         editor.chain().focus().toggleSubscript().run();
         break;
       case 'kbd':
-        // Custom for keyboard input - wrap in <kbd> tags
         const { from, to } = editor.state.selection;
         const text = editor.state.doc.textBetween(from, to, '');
         if (text) {
@@ -292,13 +285,8 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
         }
         break;
       case 'uppercase':
-        // For uppercase, we get the selected text and replace it with its uppercase version
         const selection = editor.state.selection;
-        const selectedText = editor.state.doc.textBetween(
-          selection.from, 
-          selection.to,
-          ''
-        );
+        const selectedText = editor.state.doc.textBetween(selection.from, selection.to, '');
         if (selectedText) {
           editor.chain().focus().insertContent(selectedText.toUpperCase()).run();
         }
@@ -784,15 +772,22 @@ const ParagraphBlock: React.FC<ParagraphBlockProps> = ({ data, onChange }) => {
         </Popover>
       </div>
       
-      <div 
-        className={`min-h-[150px] border rounded-md p-2 ${data.alignment ? `text-${data.alignment}` : ''}`}
+      <div
+        className={`min-h-[100px] w-full p-1 rounded-md
+          ${data.alignment ? `text-${data.alignment}` : ''}
+        `}
         style={{
           fontSize: data.fontSize || 'inherit',
           color: data.textColor || 'inherit',
           backgroundColor: data.backgroundColor || 'inherit',
+          border: '1px solid transparent',
+          outline: 'none',
         }}
       >
-        <EditorContent editor={editor} />
+        <EditorContent
+          editor={editor}
+          className="min-h-[100px] w-full border-none bg-transparent shadow-none focus-visible:ring-0 resize-none"
+        />
       </div>
       
       {data.footnotes && data.footnotes.length > 0 && (
