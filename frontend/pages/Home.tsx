@@ -3,8 +3,11 @@ import React, { useEffect, useState } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import ArticlePreview from "../components/ArticlePreview";
+import { useAuth } from "../hooks/useAuth";
+import { supabase } from "../lib/supabaseClient";
 
 const Home = () => {
+  const { user } = useAuth();
   const [categories, setCategories] = useState<{ name: string; slug: string }[]>([]);
   const [latest, setLatest] = useState<any[]>([]);
   const [featured, setFeatured] = useState<any[]>([]);
@@ -12,35 +15,41 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch categories
-    fetch("https://qdedlkgysrlyrhtvtyey.supabase.co/rest/v1/categories?order=display_order.asc,name.asc&select=name,slug", {
-      headers: {
-        apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkZWRsa2d5c3JseXJodHZ0eWV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ2MTY5MTUsImV4cCI6MjA2MDE5MjkxNX0.kHR_14KdxzDs6Mj6WPGw7ZvTXAmrDXNWRxc7N5fkXg8",
-      },
-    })
-      .then((r) => r.json())
-      .then(setCategories);
+    const fetchCategories = async () => {
+      const { data } = await supabase
+        .from('categories')
+        .select('name,slug')
+        .order('name', { ascending: true });
 
-    // Fetch articles
-    fetch(
-      `https://qdedlkgysrlyrhtvtyey.supabase.co/rest/v1/articles?select=*,categories(name,slug)&status=eq.published&order=published_at.desc&limit=12`,
-      {
-        headers: {
-          apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkZWRsa2d5c3JseXJodHZ0eWV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ2MTY5MTUsImV4cCI6MjA2MDE5MjkxNX0.kHR_14KdxzDs6Mj6WPGw7ZvTXAmrDXNWRxc7N5fkXg8",
-        },
-      }
-    )
-      .then((r) => r.json())
-      .then((articles) => {
+      if (data) setCategories(data);
+    };
+
+    const fetchArticles = async () => {
+      // Get articles with their categories
+      const { data: articles } = await supabase
+        .from('articles')
+        .select(`
+          *,
+          categories:article_categories(categories(*))
+        `)
+        .eq('status', 'published')
+        .order('published_at', { ascending: false })
+        .limit(12);
+
+      if (articles) {
         setLatest(articles.slice(0, 6));
-        setFeatured(articles.filter((a: any) => a.is_featured).slice(0, 4));
-        setTopStories(articles.filter((a: any) => a.is_top_story).slice(0, 4));
-        setLoading(false);
-      });
+        setFeatured(articles.filter(article => article.is_featured).slice(0, 4));
+        setTopStories(articles.filter(article => article.is_top_story).slice(0, 4));
+      }
+      setLoading(false);
+    };
+
+    fetchCategories();
+    fetchArticles();
   }, []);
 
   return (
-    <div className="min-h-screen relative bg-gradient-to-br from-[#1A1F2C] to-[#F1F1F1] dark:from-[#19172b] dark:to-[#1A1F2C]">
+    <div className="min-h-screen relative bg-gradient-to-br from-[#F1F1F1] to-[#E5E5E5] dark:from-[#1A1F2C] dark:to-[#19172b]">
       <Header categories={categories} />
       <main className="container mx-auto px-4 pt-10 pb-24">
         <section className="mb-10">

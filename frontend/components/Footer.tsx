@@ -1,5 +1,7 @@
 
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { supabase } from "../lib/supabaseClient";
 
 type SocialLinks = {
   facebook?: string;
@@ -39,39 +41,76 @@ const iconMap: Record<string, JSX.Element> = {
 
 const Footer = () => {
   const [links, setLinks] = useState<SocialLinks>({});
+  const [year] = useState(new Date().getFullYear());
 
   useEffect(() => {
-    // Fetch social links from backend
-    fetch("https://qdedlkgysrlyrhtvtyey.supabase.co/rest/v1/site_settings?key=eq.social_links", {
-      headers: {
-        apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkZWRsa2d5c3JseXJodHZ0eWV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ2MTY5MTUsImV4cCI6MjA2MDE5MjkxNX0.kHR_14KdxzDs6Mj6WPGw7ZvTXAmrDXNWRxc7N5fkXg8",
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then((res) => {
-        try {
-          setLinks(res?.[0]?.value || {});
-        } catch {
-          setLinks({});
-        }
-      });
+    const fetchSocialLinks = async () => {
+      const { data } = await supabase
+        .from('site_settings')
+        .select('*')
+        .eq('key', 'social_links')
+        .single();
+      
+      if (data && data.value) {
+        setLinks(data.value);
+      }
+    };
+
+    fetchSocialLinks();
   }, []);
 
   return (
-    <footer className="bg-[#1A1F2C] dark:bg-[#19172b] py-8 mt-12 text-white flex flex-col gap-2">
-      <div className="container mx-auto flex flex-col md:flex-row justify-between items-center px-4">
-        <div className="flex items-center gap-6">
-          {Object.entries(links).map(
-            ([key, value]) =>
-              value && (
-                <a key={key} href={value} target="_blank" rel="noreferrer" className="hover:text-[#8B5CF6] transition">
-                  {iconMap[key]}
-                </a>
-              )
-          )}
+    <footer className="bg-[#1A1F2C] dark:bg-[#19172b] py-10 mt-12 text-white">
+      <div className="container mx-auto px-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+          <div className="col-span-1 md:col-span-2">
+            <Link to="/" className="text-2xl font-bold text-gradient-primary mb-4 inline-block">
+              Info Stream Africa
+            </Link>
+            <p className="text-gray-300 mt-2 max-w-md">
+              Your trusted source for news and insights from across Africa and the world. Stay informed with our comprehensive coverage.
+            </p>
+          </div>
+          
+          <div>
+            <h3 className="text-lg font-bold mb-4">Quick Links</h3>
+            <ul className="space-y-2">
+              <li><Link to="/" className="text-gray-300 hover:text-white transition">Home</Link></li>
+              <li><Link to="/auth" className="text-gray-300 hover:text-white transition">Sign In</Link></li>
+              <li><Link to="/bookmarks" className="text-gray-300 hover:text-white transition">Bookmarks</Link></li>
+              <li><Link to="/profile" className="text-gray-300 hover:text-white transition">Profile</Link></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h3 className="text-lg font-bold mb-4">Connect With Us</h3>
+            <div className="flex items-center gap-4 mt-2">
+              {Object.entries(links).map(
+                ([key, value]) =>
+                  value && (
+                    <a 
+                      key={key} 
+                      href={value} 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      className="hover:text-[#8B5CF6] transition"
+                      aria-label={`Visit our ${key} page`}
+                    >
+                      {iconMap[key]}
+                    </a>
+                  )
+              )}
+            </div>
+          </div>
         </div>
-        <p className="font-medium">&copy; {new Date().getFullYear()} Info Stream Africa</p>
+        
+        <div className="border-t border-gray-700 mt-10 pt-6 flex flex-col md:flex-row justify-between items-center">
+          <p>&copy; {year} Info Stream Africa. All rights reserved.</p>
+          <div className="flex gap-6 mt-4 md:mt-0">
+            <Link to="/privacy" className="text-gray-300 hover:text-white transition text-sm">Privacy Policy</Link>
+            <Link to="/terms" className="text-gray-300 hover:text-white transition text-sm">Terms of Service</Link>
+          </div>
+        </div>
       </div>
     </footer>
   );
