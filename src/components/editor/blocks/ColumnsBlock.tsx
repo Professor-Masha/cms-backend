@@ -5,6 +5,7 @@ import { Block } from '@/types/cms';
 import BlockRenderer from '../BlockRenderer';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
+import ColumnsBlockSettings from './ColumnsBlockSettings';
 
 interface ColumnsBlockProps {
   data: {
@@ -16,6 +17,8 @@ interface ColumnsBlockProps {
     }>;
     gapSize: 'small' | 'medium' | 'large';
     stackOnMobile: boolean;
+    columnAlignment?: 'left' | 'center' | 'right' | 'justify';
+    contentAlignment?: 'left' | 'center' | 'right' | 'justify';
   };
   onChange: (data: any) => void;
 }
@@ -30,6 +33,17 @@ const gapMap: Record<'small' | 'medium' | 'large', string> = {
 const getColumnStyle = (width: number, unit: string = '%') => {
   if (unit === '%') return { width: `${width}%` };
   return { flex: `0 0 auto`, width: `${width}${unit}` };
+};
+
+// Helper: get alignment classes 
+const getAlignmentClasses = (alignment?: 'left' | 'center' | 'right' | 'justify') => {
+  switch(alignment) {
+    case 'left': return 'justify-start text-left';
+    case 'center': return 'justify-center text-center';
+    case 'right': return 'justify-end text-right';
+    case 'justify': return 'justify-between text-justify';
+    default: return '';
+  }
 };
 
 const ColumnsBlock: React.FC<ColumnsBlockProps> = ({ data, onChange }) => {
@@ -97,14 +111,21 @@ const ColumnsBlock: React.FC<ColumnsBlockProps> = ({ data, onChange }) => {
 
   // Get spacing between columns
   const gapClass = gapMap[data.gapSize] || gapMap.medium;
+  
+  // Get alignment classes
+  const columnAlignClass = getAlignmentClasses(data.columnAlignment);
+  const contentAlignClass = getAlignmentClasses(data.contentAlignment);
+
+  // Mobile stack class
+  const mobileStackClass = data.stackOnMobile ? 'flex-col md:flex-row' : '';
 
   return (
-    <div className={`flex ${gapClass} w-full`} style={{ minHeight: 120 }}>
+    <div className={`flex ${gapClass} ${mobileStackClass} ${columnAlignClass} w-full`} style={{ minHeight: 120 }}>
       {data.columns.map((column, colIdx) => (
         <div
           key={column.id}
           style={getColumnStyle(column.width, column.widthUnit || '%')}
-          className="bg-[#f6f6f7] rounded-md p-4 flex flex-col gap-4 border border-gray-200 min-h-[100px] transition-shadow relative group"
+          className={`bg-[#f6f6f7] rounded-md p-4 flex flex-col gap-4 border border-gray-200 min-h-[100px] transition-shadow relative group ${contentAlignClass}`}
         >
           {column.blocks && column.blocks.length > 0 ? (
             column.blocks.map((block, blockIdx) => (
@@ -147,4 +168,3 @@ const ColumnsBlock: React.FC<ColumnsBlockProps> = ({ data, onChange }) => {
 };
 
 export default ColumnsBlock;
-
