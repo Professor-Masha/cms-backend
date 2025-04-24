@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = "https://qdedlkgysrlyrhtvtyey.supabase.co";
@@ -65,4 +64,31 @@ export const getBookmarks = async () => {
     .select('*, articles(*)')
     .eq('user_id', session.user.id)
     .order('created_at', { ascending: false });
+};
+
+export const getArticleBySlug = async (slug: string, isDraft: boolean = false) => {
+  let query = supabase.from('articles')
+    .select('*')
+    .eq('slug', slug);
+  
+  if (!isDraft) {
+    query = query.eq('status', 'published');
+  }
+  
+  return query.single();
+};
+
+export const generatePreviewLink = (articleId: string, slug: string) => {
+  const previewSecret = "infostream_preview_secret";
+  const baseUrl = window.location.origin;
+  return `${baseUrl}/preview?slug=${slug}&secret=${previewSecret}&draft=true`;
+};
+
+export const isPreviewModeEnabled = () => {
+  return sessionStorage.getItem('previewMode') === 'enabled';
+};
+
+export const exitPreviewMode = () => {
+  sessionStorage.removeItem('previewMode');
+  sessionStorage.removeItem('previewArticleId');
 };
