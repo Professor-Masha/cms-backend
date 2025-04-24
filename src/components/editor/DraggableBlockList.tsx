@@ -126,7 +126,7 @@ const DraggableBlockList: React.FC<DraggableBlockListProps> = ({
         data: {
           columns: createColumnsFromLayout(config?.layout || [50, 50], blocksToTransform),
           gapSize: 'medium',
-          stackOnMobile: true
+          stackOnMobile: true,
         },
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -167,25 +167,27 @@ const DraggableBlockList: React.FC<DraggableBlockListProps> = ({
     // Ensure layout percentages add up to 100
     const totalWidth = layout.reduce((sum, width) => sum + width, 0);
     const normalizedLayout = layout.map(width => Math.round((width / totalWidth) * 100));
-    
+
     // Create column data
     const columns = normalizedLayout.map((width, i) => ({
       id: `col-${uuidv4()}`,
       width,
-      blocks: [] as Block[]
+      blocks: [] as Block[],
     }));
-    
+
     // Distribute blocks across columns
     if (blocksToPlace.length <= columns.length) {
       // Place one block per column (from the start)
       blocksToPlace.forEach((block, i) => {
         columns[i].blocks.push(block);
       });
-    } else {
+    }
+    else {
       // Distribute blocks evenly across columns
       const blocksPerColumn = Math.ceil(blocksToPlace.length / columns.length);
       blocksToPlace.forEach((block, i) => {
-        const columnIndex = Math.min(Math.floor(i / blocksPerColumn), columns.length - 1);
+        const columnIndex = Math.min(
+          Math.floor(i / blocksPerColumn), columns.length - 1);
         columns[columnIndex].blocks.push(block);
       });
     }
@@ -193,6 +195,26 @@ const DraggableBlockList: React.FC<DraggableBlockListProps> = ({
     return columns;
   };
 
+  const handleReorderColumnBlocks = (result: any, columnId: string) => {
+    // Reorder blocks within a specific column
+    if (result.destination && result.source) {
+      const updatedBlocks = [...blocks];
+      const columnIndex = updatedBlocks.findIndex(block => block.data.columns?.find((col: any) => col.id === columnId));
+
+      if (columnIndex !== -1) {
+        const columnToUpdate = updatedBlocks[columnIndex].data.columns.find((col: any) => col.id === columnId);
+        const [reorderedBlock] = columnToUpdate.blocks.splice(result.source.index, 1);
+        columnToUpdate.blocks.splice(result.destination.index, 0, reorderedBlock);
+
+        // Update the blocks with the reordered column data
+        onReorderBlocks({
+          source: { index: -1 },
+          destination: { index: -1 },
+          customBlocks: updatedBlocks,
+        });
+      }
+    }
+  };
   return (
     <DragDropContext onDragEnd={onReorderBlocks}>
       <Droppable droppableId="blocks">
@@ -209,10 +231,12 @@ const DraggableBlockList: React.FC<DraggableBlockListProps> = ({
                 index={index}
               >
                 {(provided) => (
+                  
                   <div
                     ref={provided.innerRef}
                     {...provided.draggableProps}
                     className="mb-4 draggable-block"
+                    {...provided.dragHandleProps}
                   >
                     <BlockRenderer
                       block={block}
@@ -260,9 +284,8 @@ const DraggableBlockList: React.FC<DraggableBlockListProps> = ({
                       isSelected={selectedBlockIndex === index}
                       isMultiSelected={selectedBlocks.includes(index)}
                       onSelect={() => handleBlockSelect(index)}
-                      dragHandleProps={{
-                        ...provided.dragHandleProps,
-                      }}
+                      onReorderColumnBlocks={(result, columnId) => handleReorderColumnBlocks(result, columnId)}
+                      
                     />
                   </div>
                 )}

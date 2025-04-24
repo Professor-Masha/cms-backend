@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,11 +12,13 @@ interface GroupBlockProps {
     blocks: Block[];
     label: string;
     style: string;
+    backgroundColor?: string;
   };
   onChange: (data: any) => void;
 }
 
 const GroupBlock: React.FC<GroupBlockProps> = ({ data, onChange }) => {
+  const [selectedBackgroundColor, setSelectedBackgroundColor] = useState(data.backgroundColor || '#ffffff');
   const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange({
       ...data,
@@ -28,6 +30,13 @@ const GroupBlock: React.FC<GroupBlockProps> = ({ data, onChange }) => {
     onChange({
       ...data,
       style: value
+    });
+  };
+
+  const handleBackgroundColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange({
+      ...data,
+      backgroundColor: e.target.value
     });
   };
 
@@ -45,7 +54,7 @@ const GroupBlock: React.FC<GroupBlockProps> = ({ data, onChange }) => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" style={{ backgroundColor: data.backgroundColor }}>
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="group-label">Group Label</Label>
@@ -71,9 +80,18 @@ const GroupBlock: React.FC<GroupBlockProps> = ({ data, onChange }) => {
           </Select>
         </div>
       </div>
+      <div className="grid grid-cols-1 gap-4">
+        <div>
+          <Label htmlFor="background-color">Background Color</Label>
+          <Input
+            type="color"
+            id="background-color"
+            value={data.backgroundColor || '#ffffff'}
+            onChange={handleBackgroundColorChange}
+          />
+        </div>
+      </div>
       
-      <div className="border rounded-md p-4">
-        <p className="text-sm font-medium mb-4">{data.label || 'Grouped Blocks'}</p>
         {data.blocks && data.blocks.length > 0 ? (
           <DragDropContext onDragEnd={handleReorderBlocks}>
             <Droppable droppableId="group-blocks">
@@ -106,7 +124,6 @@ const GroupBlock: React.FC<GroupBlockProps> = ({ data, onChange }) => {
           <div className="text-center py-4 border border-dashed rounded-md">
             <p className="text-muted-foreground">No blocks in this group yet</p>
           </div>
-        )}
       </div>
     </div>
   );
