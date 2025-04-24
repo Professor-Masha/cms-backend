@@ -33,7 +33,7 @@ export const generatePreviewUrl = (article) => {
   
   // Create preview URL with necessary parameters
   const baseUrl = window.location.origin;
-  return `${baseUrl}/preview?slug=${article.slug}&secret=${PREVIEW_SECRET}&draft=true`;
+  return `${baseUrl}/preview?slug=${article.slug}&secret=${PREVIEW_SECRET}&draft=true&articleId=${article.id}`;
 };
 
 /**

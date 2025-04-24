@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { X } from 'lucide-react';
+import { X, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
 import { usePreview } from './PreviewProvider';
@@ -10,7 +10,7 @@ import { usePreview } from './PreviewProvider';
  */
 const PreviewBanner: React.FC = () => {
   const navigate = useNavigate();
-  const { disablePreview } = usePreview();
+  const { disablePreview, previewArticleId } = usePreview();
   
   const handleExit = () => {
     disablePreview();
@@ -19,8 +19,10 @@ const PreviewBanner: React.FC = () => {
   
   return (
     <div className="bg-amber-500 text-black py-2 px-4 fixed top-0 left-0 right-0 z-50 flex items-center justify-center shadow-md">
+      <Eye className="mr-2" size={20} />
       <p className="text-sm font-medium flex-1 text-center">
-        📝 Preview Mode Active - You are viewing draft content
+        Preview Mode Active - You are viewing draft content
+        {previewArticleId && <span className="hidden md:inline"> (Article ID: {previewArticleId.substring(0, 8)}...)</span>}
       </p>
       <Button 
         onClick={handleExit}

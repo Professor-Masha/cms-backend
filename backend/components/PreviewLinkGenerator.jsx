@@ -2,15 +2,16 @@
 import React, { useState } from 'react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { generatePreviewLink } from '../lib/supabaseClient';
+import { generatePreviewUrl } from '../services/previewService';
 import { useToast } from '../hooks/useToast';
-import { Copy, ExternalLink } from 'lucide-react';
+import { Copy, ExternalLink, CheckCircle } from 'lucide-react';
 
 /**
  * Component for generating preview links for articles
  */
 const PreviewLinkGenerator = ({ article }) => {
   const [previewUrl, setPreviewUrl] = useState('');
+  const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
   const handleGenerateLink = () => {
@@ -23,16 +24,22 @@ const PreviewLinkGenerator = ({ article }) => {
       return;
     }
 
-    const url = generatePreviewLink(article.id, article.slug);
+    const url = generatePreviewUrl(article);
     setPreviewUrl(url);
   };
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(previewUrl);
+    setCopied(true);
+    
     toast({
       title: 'Link copied',
       description: 'Preview link copied to clipboard',
     });
+    
+    setTimeout(() => {
+      setCopied(false);
+    }, 3000);
   };
 
   const handleOpenPreview = () => {
@@ -50,7 +57,7 @@ const PreviewLinkGenerator = ({ article }) => {
           <div className="flex gap-2">
             <Input value={previewUrl} readOnly className="text-xs" />
             <Button onClick={handleCopyLink} size="icon" variant="outline">
-              <Copy size={16} />
+              {copied ? <CheckCircle size={16} /> : <Copy size={16} />}
             </Button>
             <Button onClick={handleOpenPreview} size="icon">
               <ExternalLink size={16} />
